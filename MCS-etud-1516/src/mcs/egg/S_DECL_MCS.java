@@ -1,8 +1,14 @@
 package mcs.egg;
-import mcs.gc.IMachine;
-import mg.egg.eggc.runtime.libjava.messages.CoreMessages;
-import mg.egg.eggc.runtime.libjava.messages.ICoreMessages;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_DECL_MCS {
 LEX_MCS scanner;
   S_DECL_MCS() {
@@ -41,10 +47,10 @@ x_2.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_pv : // 130
+      case LEX_MCS.token_pv : // 480
         regle5 () ;
       break ;
-      case LEX_MCS.token_paro : // 124
+      case LEX_MCS.token_paro : // 474
         regle6 () ;
       break ;
       default :

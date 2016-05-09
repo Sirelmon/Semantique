@@ -1,8 +1,14 @@
 package mcs.egg;
-import mcs.gc.IMachine;
-import mg.egg.eggc.runtime.libjava.messages.CoreMessages;
-import mg.egg.eggc.runtime.libjava.messages.ICoreMessages;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_RX_MCS {
 LEX_MCS scanner;
   S_RX_MCS() {
@@ -44,43 +50,43 @@ x_4.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_plus : // 149
+      case LEX_MCS.token_plus : // 499
         regle47 () ;
       break ;
-      case LEX_MCS.token_moins : // 150
+      case LEX_MCS.token_moins : // 500
         regle47 () ;
       break ;
-      case LEX_MCS.token_ou : // 151
+      case LEX_MCS.token_ou : // 501
         regle47 () ;
       break ;
-      case LEX_MCS.token_inf : // 143
+      case LEX_MCS.token_inf : // 493
         regle48 () ;
       break ;
-      case LEX_MCS.token_sup : // 145
+      case LEX_MCS.token_sup : // 495
         regle48 () ;
       break ;
-      case LEX_MCS.token_infeg : // 144
+      case LEX_MCS.token_infeg : // 494
         regle48 () ;
       break ;
-      case LEX_MCS.token_supeg : // 146
+      case LEX_MCS.token_supeg : // 496
         regle48 () ;
       break ;
-      case LEX_MCS.token_eg : // 147
+      case LEX_MCS.token_eg : // 497
         regle48 () ;
       break ;
-      case LEX_MCS.token_neg : // 148
+      case LEX_MCS.token_neg : // 498
         regle48 () ;
       break ;
-      case LEX_MCS.token_affect : // 131
+      case LEX_MCS.token_affect : // 481
         regle48 () ;
       break ;
-      case LEX_MCS.token_virg : // 128
+      case LEX_MCS.token_virg : // 478
         regle48 () ;
       break ;
-      case LEX_MCS.token_pv : // 130
+      case LEX_MCS.token_pv : // 480
         regle48 () ;
       break ;
-      case LEX_MCS.token_parf : // 125
+      case LEX_MCS.token_parf : // 475
         regle48 () ;
       break ;
       default :

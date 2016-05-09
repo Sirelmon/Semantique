@@ -1,5 +1,14 @@
 package mcs.egg;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_PTRS_MCS {
 LEX_MCS scanner;
   S_PTRS_MCS() {
@@ -12,11 +21,6 @@ LEX_MCS scanner;
 int [] sync= new int[0];
   boolean att_eval;
   LEX_MCS att_scanner;
-  private void regle14() throws Exception {
-
-    //declaration
-    //appel
-  }
   private void regle15() throws Exception {
 
     //declaration
@@ -26,19 +30,24 @@ int [] sync= new int[0];
     x_2.analyser(LEX_MCS.token_mult);
     x_3.analyser() ;
   }
+  private void regle14() throws Exception {
+
+    //declaration
+    //appel
+  }
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_identc : // 161
+      case LEX_MCS.token_identc : // 511
         regle14 () ;
       break ;
-      case LEX_MCS.token_ident : // 160
+      case LEX_MCS.token_ident : // 510
         regle14 () ;
       break ;
-      case LEX_MCS.token_parf : // 125
+      case LEX_MCS.token_parf : // 475
         regle14 () ;
       break ;
-      case LEX_MCS.token_mult : // 152
+      case LEX_MCS.token_mult : // 502
         regle15 () ;
       break ;
       default :

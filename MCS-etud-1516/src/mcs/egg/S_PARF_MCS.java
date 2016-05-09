@@ -1,5 +1,14 @@
 package mcs.egg;
-import mcs.gc.IMachine;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
+import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_PARF_MCS {
 LEX_MCS scanner;
   S_PARF_MCS() {

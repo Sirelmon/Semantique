@@ -1,11 +1,16 @@
 package mcs.egg;
-import mcs.compiler.MCSSourceFile;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
 import mg.egg.eggc.runtime.libjava.EGGException;
 import mg.egg.eggc.runtime.libjava.ISourceUnit;
 import mg.egg.eggc.runtime.libjava.lex.LEX_CONTEXTE;
-import mg.egg.eggc.runtime.libjava.messages.NLS;
 import mg.egg.eggc.runtime.libjava.problem.IProblemReporter;
+import mg.egg.eggc.runtime.libjava.problem.IProblem;
 import mg.egg.eggc.runtime.libjava.problem.ProblemSeverities;
+import mg.egg.eggc.runtime.libjava.messages.NLS;
 public class MCS {
   LEX_MCS scanner;
   protected IProblemReporter problemReporter;
@@ -32,13 +37,6 @@ public class MCS {
       problemReporter.handle(e.getCategory(), e.getCode(),0, NLS.bind(e.getId(),e.getArgs()),ProblemSeverities.Error,0,0,e.getArgs());
     }
     }
-  MCSSourceFile att_source;
-  public void set_source(MCSSourceFile a_source){
-    att_source = a_source;
-  }
-  public MCSSourceFile get_source(){
-    return att_source;
-  }
   boolean att_eval;
   public void set_eval(boolean a_eval){
     att_eval = a_eval;
@@ -52,5 +50,12 @@ public class MCS {
   }
   public LEX_MCS get_scanner(){
     return att_scanner;
+  }
+  MCSSourceFile att_source;
+  public void set_source(MCSSourceFile a_source){
+    att_source = a_source;
+  }
+  public MCSSourceFile get_source(){
+    return att_source;
   }
   }

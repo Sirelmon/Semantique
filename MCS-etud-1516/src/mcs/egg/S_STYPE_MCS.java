@@ -1,5 +1,14 @@
 package mcs.egg;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_STYPE_MCS {
 LEX_MCS scanner;
   S_STYPE_MCS() {
@@ -12,19 +21,12 @@ LEX_MCS scanner;
 int [] sync= new int[0];
   boolean att_eval;
   LEX_MCS att_scanner;
-  private void regle16() throws Exception {
+  private void regle19() throws Exception {
 
     //declaration
     T_MCS x_2 = new T_MCS(scanner ) ;
     //appel
-    x_2.analyser(LEX_MCS.token_void);
-  }
-  private void regle17() throws Exception {
-
-    //declaration
-    T_MCS x_2 = new T_MCS(scanner ) ;
-    //appel
-    x_2.analyser(LEX_MCS.token_int);
+    x_2.analyser(LEX_MCS.token_identc);
   }
   private void regle18() throws Exception {
 
@@ -33,12 +35,19 @@ int [] sync= new int[0];
     //appel
     x_2.analyser(LEX_MCS.token_char);
   }
-  private void regle19() throws Exception {
+  private void regle17() throws Exception {
 
     //declaration
     T_MCS x_2 = new T_MCS(scanner ) ;
     //appel
-    x_2.analyser(LEX_MCS.token_identc);
+    x_2.analyser(LEX_MCS.token_int);
+  }
+  private void regle16() throws Exception {
+
+    //declaration
+    T_MCS x_2 = new T_MCS(scanner ) ;
+    //appel
+    x_2.analyser(LEX_MCS.token_void);
   }
   private void regle20() throws Exception {
 
@@ -56,19 +65,19 @@ int [] sync= new int[0];
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_void : // 134
+      case LEX_MCS.token_void : // 484
         regle16 () ;
       break ;
-      case LEX_MCS.token_int : // 136
+      case LEX_MCS.token_int : // 486
         regle17 () ;
       break ;
-      case LEX_MCS.token_char : // 137
+      case LEX_MCS.token_char : // 487
         regle18 () ;
       break ;
-      case LEX_MCS.token_identc : // 161
+      case LEX_MCS.token_identc : // 511
         regle19 () ;
       break ;
-      case LEX_MCS.token_struct : // 138
+      case LEX_MCS.token_struct : // 488
         regle20 () ;
       break ;
       default :

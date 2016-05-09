@@ -1,8 +1,14 @@
 package mcs.egg;
-import mcs.gc.IMachine;
-import mg.egg.eggc.runtime.libjava.messages.CoreMessages;
-import mg.egg.eggc.runtime.libjava.messages.ICoreMessages;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_AFFX_MCS {
 LEX_MCS scanner;
   S_AFFX_MCS() {
@@ -16,6 +22,11 @@ int [] sync= new int[0];
   boolean att_eval;
   IMachine att_machine;
   LEX_MCS att_scanner;
+  private void regle36() throws Exception {
+
+    //declaration
+    //appel
+  }
   private void regle35() throws Exception {
 
     //declaration
@@ -25,11 +36,6 @@ int [] sync= new int[0];
 if  (att_eval)      action_auto_inh_35(x_3);
     x_2.analyser(LEX_MCS.token_affect);
     x_3.analyser() ;
-  }
-  private void regle36() throws Exception {
-
-    //declaration
-    //appel
   }
 private void action_auto_inh_35(S_A_MCS x_3) throws Exception {
 try {
@@ -41,16 +47,16 @@ x_3.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_affect : // 131
+      case LEX_MCS.token_affect : // 481
         regle35 () ;
       break ;
-      case LEX_MCS.token_pv : // 130
+      case LEX_MCS.token_pv : // 480
         regle36 () ;
       break ;
-      case LEX_MCS.token_virg : // 128
+      case LEX_MCS.token_virg : // 478
         regle36 () ;
       break ;
-      case LEX_MCS.token_parf : // 125
+      case LEX_MCS.token_parf : // 475
         regle36 () ;
       break ;
       default :

@@ -1,8 +1,14 @@
 package mcs.egg;
-import mcs.gc.IMachine;
-import mg.egg.eggc.runtime.libjava.messages.CoreMessages;
-import mg.egg.eggc.runtime.libjava.messages.ICoreMessages;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_PARFS_MCS {
 LEX_MCS scanner;
   S_PARFS_MCS() {
@@ -42,22 +48,22 @@ x_3.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_parf : // 125
+      case LEX_MCS.token_parf : // 475
         regle8 () ;
       break ;
-      case LEX_MCS.token_void : // 134
+      case LEX_MCS.token_void : // 484
         regle9 () ;
       break ;
-      case LEX_MCS.token_int : // 136
+      case LEX_MCS.token_int : // 486
         regle9 () ;
       break ;
-      case LEX_MCS.token_char : // 137
+      case LEX_MCS.token_char : // 487
         regle9 () ;
       break ;
-      case LEX_MCS.token_identc : // 161
+      case LEX_MCS.token_identc : // 511
         regle9 () ;
       break ;
-      case LEX_MCS.token_struct : // 138
+      case LEX_MCS.token_struct : // 488
         regle9 () ;
       break ;
       default :

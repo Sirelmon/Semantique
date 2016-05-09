@@ -1,5 +1,14 @@
 package mcs.egg;
+import mcs.compiler.*;
+import mcs.tds.*;
+import mcs.type.*;
+import mcs.gc.*;
+import java.util.*;
+import mg.egg.eggc.runtime.libjava.lex.*;
+import mg.egg.eggc.runtime.libjava.*;
+import mg.egg.eggc.runtime.libjava.messages.*;
 import mg.egg.eggc.runtime.libjava.problem.IProblem;
+import java.util.Vector;
 public class S_OPMUL_MCS {
 LEX_MCS scanner;
   S_OPMUL_MCS() {
@@ -43,16 +52,16 @@ int [] sync= new int[0];
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_mult : // 152
+      case LEX_MCS.token_mult : // 502
         regle55 () ;
       break ;
-      case LEX_MCS.token_div : // 153
+      case LEX_MCS.token_div : // 503
         regle56 () ;
       break ;
-      case LEX_MCS.token_mod : // 154
+      case LEX_MCS.token_mod : // 504
         regle57 () ;
       break ;
-      case LEX_MCS.token_et : // 155
+      case LEX_MCS.token_et : // 505
         regle58 () ;
       break ;
       default :
