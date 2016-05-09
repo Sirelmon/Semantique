@@ -82,9 +82,6 @@ term chaine is  "\"[^\"]*\"";
 term ident is  "[a-z][_0-9A-Za-z]*";
 term identc is  "[A-Z][_0-9A-Za-z]*";
 
-
--- test!
-
 -- pour les instructions en assembleur TAM 'inline'
 compil ASM;
 

@@ -45,13 +45,13 @@ int [] sync= new int[0];
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_plus : // 499
+      case LEX_MCS.token_plus : // 647
         regle49 () ;
       break ;
-      case LEX_MCS.token_moins : // 500
+      case LEX_MCS.token_moins : // 648
         regle50 () ;
       break ;
-      case LEX_MCS.token_ou : // 501
+      case LEX_MCS.token_ou : // 649
         regle51 () ;
       break ;
       default :

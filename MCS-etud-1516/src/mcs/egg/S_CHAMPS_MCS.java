@@ -38,22 +38,22 @@ int [] sync= new int[0];
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_acf : // 477
+      case LEX_MCS.token_acf : // 625
         regle21 () ;
       break ;
-      case LEX_MCS.token_void : // 484
+      case LEX_MCS.token_void : // 632
         regle22 () ;
       break ;
-      case LEX_MCS.token_int : // 486
+      case LEX_MCS.token_int : // 634
         regle22 () ;
       break ;
-      case LEX_MCS.token_char : // 487
+      case LEX_MCS.token_char : // 635
         regle22 () ;
       break ;
-      case LEX_MCS.token_identc : // 511
+      case LEX_MCS.token_identc : // 659
         regle22 () ;
       break ;
-      case LEX_MCS.token_struct : // 488
+      case LEX_MCS.token_struct : // 636
         regle22 () ;
       break ;
       default :
