@@ -18,6 +18,8 @@ public interface DTYPE {
 	 * @return
 	 */
 	public boolean compareTo(DTYPE autre);
+	
+
 
 	public String toString();
 }

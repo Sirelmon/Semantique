@@ -48,22 +48,22 @@ x_3.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_parf : // 623
+      case LEX_MCS.token_parf : // 321
         regle8 () ;
       break ;
-      case LEX_MCS.token_void : // 632
+      case LEX_MCS.token_void : // 330
         regle9 () ;
       break ;
-      case LEX_MCS.token_int : // 634
+      case LEX_MCS.token_int : // 332
         regle9 () ;
       break ;
-      case LEX_MCS.token_char : // 635
+      case LEX_MCS.token_char : // 333
         regle9 () ;
       break ;
-      case LEX_MCS.token_identc : // 659
+      case LEX_MCS.token_identc : // 357
         regle9 () ;
       break ;
-      case LEX_MCS.token_struct : // 636
+      case LEX_MCS.token_struct : // 334
         regle9 () ;
       break ;
       default :

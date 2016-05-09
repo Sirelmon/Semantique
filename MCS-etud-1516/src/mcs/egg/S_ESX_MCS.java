@@ -50,10 +50,10 @@ x_4.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_parf : // 623
+      case LEX_MCS.token_parf : // 321
         regle77 () ;
       break ;
-      case LEX_MCS.token_virg : // 626
+      case LEX_MCS.token_virg : // 324
         regle78 () ;
       break ;
       default :

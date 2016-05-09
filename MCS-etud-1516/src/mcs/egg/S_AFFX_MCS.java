@@ -47,16 +47,16 @@ x_3.att_machine=this.att_machine;
   public void analyser () throws Exception {
     scanner.lit ( 1 ) ;
     switch ( scanner.fenetre[0].code ) {
-      case LEX_MCS.token_affect : // 629
+      case LEX_MCS.token_affect : // 327
         regle35 () ;
       break ;
-      case LEX_MCS.token_pv : // 628
+      case LEX_MCS.token_pv : // 326
         regle36 () ;
       break ;
-      case LEX_MCS.token_virg : // 626
+      case LEX_MCS.token_virg : // 324
         regle36 () ;
       break ;
-      case LEX_MCS.token_parf : // 623
+      case LEX_MCS.token_parf : // 321
         regle36 () ;
       break ;
       default :
