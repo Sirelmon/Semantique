@@ -1,25 +1,25 @@
 package mcs.type;
 
 public class POINTEUR extends DTYPE {
-	private DTYPE type;
+	private DTYPE typeP;//type pointé
 
 	public POINTEUR(DTYPE t) {
 		super("pointeur", 1);
-		type = t;
+		typeP = t;
 	}
 
-	public DTYPE getType() {
-		return type;
+	public DTYPE getTypeP() {
+		return typeP;
 	}
 	public boolean compareTo(DTYPE autre) {
 		if (autre instanceof POINTEUR)
-			return type.compareTo(((POINTEUR) autre).type);
+			return typeP.compareTo(((POINTEUR) autre).typeP);
 		return false;
 	}
 
 
 	public String toString(){
-		return super.toString() + " sur type = " + type;
+		return super.toString() + " sur type = " + typeP;
 	}
 
 
