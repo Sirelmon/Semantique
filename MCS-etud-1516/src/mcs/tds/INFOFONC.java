@@ -1,7 +1,6 @@
 package mcs.tds;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import mcs.gc.Emplacement;
 import mcs.type.DTYPE;
@@ -18,14 +17,14 @@ import mcs.type.DTYPE;
 public class INFOFONC implements INFO{
 
 	protected DTYPE Rtype;
-	protected HashMap<String, INFO> paras;
+	protected LinkedHashMap<String, INFO> paras;
 	protected String etiq;
 	
 	public DTYPE getRtype() {
 		return Rtype;
 	}
 
-	public HashMap<String, INFO> getParas() {
+	public LinkedHashMap<String, INFO> getParas() {
 		return paras;
 	}
 
@@ -33,7 +32,7 @@ public class INFOFONC implements INFO{
 		return etiq;
 	}
 
-	public INFOFONC(String nom, DTYPE type, HashMap<String,INFO> para, Emplacement e){
+	public INFOFONC(String nom, DTYPE type, LinkedHashMap<String,INFO> para, Emplacement e){
 		this.Rtype =type;
 		this.paras = para;
 		this.etiq = nom+e.toString();
