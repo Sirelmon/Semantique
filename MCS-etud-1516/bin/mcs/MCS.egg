@@ -18,7 +18,8 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE;
+ syn type : DTYPE for TYPE, STYPE, PTRS;
+ inh htype: DTYPE for PTRS;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
@@ -129,27 +130,68 @@ PARFSX ->  ;
 PARFSX ->  virg PARF PARFSX ;
 PARF ->  TYPE ident ;
 -- les types (de base, noms, struct et pointeurs)
-TYPE -> STYPE  PTRS ;
+TYPE -> STYPE  PTRS #type ;
+#type {
+do 
+
+end 
+}
+
 -- type de base
 -- des * pour definir un pointeur
 PTRS -> ;
-PTRS -> mult PTRS ;
+PTRS -> mult PTRS #type;
+#type {
+do
+  PTRS^type := new POINTEUR(PTRS1^type);
+end
+}
 -- types de base
 STYPE-> void #type ;
 #type {
 do
-STYPE^type:= new Void(); 
-end 
+    STYPE^type := new DTYPE("void", 1);
+    -- il faut encore définir la bonne taille
+end
 }
 STYPE-> int #type;
 #type {
-do 
-STYPE^type := new Int();
-end 
+do
+    STYPE^type := new DTYPE("int", 1);
+    -- il faut encore définir la bonne taille
+end
 }
-STYPE-> char ;
+STYPE-> char #type;
+#type {
+do
+    STYPE^type := new DTYPE("char", 1);
+    -- il faut encore définir la bonne taille
+end
+}
 -- nom de type (commence par une majuscule)
-STYPE -> identc;
+STYPE -> identc #type;
+
+#type {
+ local
+    i : INFO ;
+    it : INFOTYPE;
+    t : DTYPE;
+ do
+    -- rechercher l'ident   
+    i := TYPE^tds.chercherGlobalement(ident^txt);
+    if i = null then
+      error(B_01, ident^txt);
+    else
+       match i
+       with INFOTYPE then
+         it := i ;
+         TYPE^type :=  it.getType();
+       else
+          error(B_07, ident^txt);
+       end
+    end
+  end
+}
 -------------  
 -- et struct
 STYPE -> struct aco CHAMPS acf ;
