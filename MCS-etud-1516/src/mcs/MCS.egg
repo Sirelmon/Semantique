@@ -19,12 +19,13 @@ inh machine : IMachine for
 --         -- fin extension MCS
          ;
  syn type : DTYPE for TYPE, STYPE, PTRS;
- inh htype: DTYPE for PTRS;
+ inh htype: DTYPE for PTRS,DECL;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
-
+inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION, PARFS, TYPE, STYPE, CHAMPS, CHAMP, INST,INSTS, BLOC;
+inh nom : STRING for DECL;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -101,6 +102,7 @@ do
      error(NO_MACH, PROGRAMME^source.getMachName());
    else
      ENTITES^machine := machine;
+     ENTITES^tds:= nil;
    end
 end
 }
@@ -112,15 +114,62 @@ do
 end
 }
 ENTITES -> ;
-ENTITES -> ENTITE ENTITES ;
+ENTITES -> #tds ENTITE ENTITES ;
+global
+    t1: TDS;
+    t2: TDS;
+#tds {
+local
+do
+    t1 := new TDS(ENTITES^tds);
+    t2 := new TDS(ENTITES^tds);
+    ENTITE^tds := t1;
+    ENTITES1^tds := t2;
+end
+}
+
 -- definition d'un nom de type (commence par une majuscule)
-ENTITE -> typedef TYPE identc pv ;
+ENTITE -> typedef TYPE identc pv #type ;
+#type{
+local
+    i: INFO;
+do
+    i := ENTITE^tds.chercherGlobalement(identc^txt);
+    if i /= nil then
+       error(B_00, identc^txt);
+    else    
+      -- creer un type
+     i := new INFOTYPE(TYPE^type);
+     call ENTITE^tds.inserer(identc^txt, i);
+    end
+end
+}
 -- definition d'une variable globale ou d'une fonction
 -- (commence par une minuscule)
-ENTITE ->  TYPE ident DECL ;
+ENTITE -> TYPE ident #decl DECL;
+#decl{
+do
+    DECL^nom := ident^txt;
+    DECL^htype := TYPE^type;
+end
+}
 -- Variable
-DECL -> pv;
-DECL -> FONCTION ;
+DECL -> pv #def;
+#def{
+local
+i: INFO;
+it:INFOTYPE;
+do
+    i := DECL^tds.chercherGlobalement(DECL^nom);
+    if i /= nil then
+      error(B_01, DECL^nom);
+    else
+       i:=new INFOTYPE(DECL^htype);
+       call DECL^tds.inserer(DECL^nom, i);
+    end
+end
+}
+DECL -> FONCTION #def;
 -- Fonction
 FONCTION ->  paro PARFS parf BLOC ;
 -- parametres de fonctions
@@ -139,13 +188,36 @@ end
 
 -- type de base
 -- des * pour definir un pointeur
-PTRS -> ;
-PTRS -> mult PTRS #type;
-#type {
+PTRS -> #type;
+#type{
 do
-  PTRS^type := new POINTEUR(PTRS1^type);
+PTRS^type:=PTRS^htype;
 end
 }
+
+
+PTRS -> mult #type1 PTRS #type;
+
+#type1{
+ local
+  p : POINTEUR ;
+
+do
+  match PTRS^htype
+  with POINTEUR then
+    p := PTRS^htype;
+    PTRS1^htype := p.getType();
+   else
+    error(B_11, PTRS^htype);
+  end
+end
+}
+#type {
+do
+PTRS^type:=PTRS1^type;
+end
+}
+
 -- types de base
 STYPE-> void #type ;
 #type {
@@ -178,16 +250,16 @@ STYPE -> identc #type;
     t : DTYPE;
  do
     -- rechercher l'ident   
-    i := TYPE^tds.chercherGlobalement(ident^txt);
+    i := STYPE^tds.chercherGlobalement(identc^txt);
     if i = null then
-      error(B_01, ident^txt);
+      error(B_01, identc^txt);
     else
        match i
        with INFOTYPE then
          it := i ;
-         TYPE^type :=  it.getType();
+         STYPE^type :=  it.getType();
        else
-          error(B_07, ident^txt);
+          error(B_07, identc^txt);
        end
     end
   end
