@@ -135,7 +135,12 @@ TYPE -> STYPE  PTRS ;
 PTRS -> ;
 PTRS -> mult PTRS ;
 -- types de base
-STYPE-> void  ;
+STYPE-> void #type ;
+#type {
+do
+STYPE^type:= new Void(); 
+end 
+}
 STYPE-> int #type;
 #type {
 do 

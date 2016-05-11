@@ -1,25 +1,33 @@
 package mcs.type;
 
-public interface DTYPE {
-	/**
-	 * La taille du type de donnee : depend de la machine
-	 * @return
-	 */
-	public int getTaille();
+public class DTYPE {
+	// inutilisable avec EGG
+	// final private DTYPE entier = new DTYPE("entier",4);
+	// public DTYPE getTypeEntier(){return entier;}
+	// final private DTYPE booleen = new DTYPE("booleen",1);
+	// public DTYPE getTypeBooleen(){return booleen;}
+	protected int taille;
 
-	/** Le nom pour un affichage plus convivial
-	 * @return
-	 */
-	public String getNom();
+	public int getTaille() {
+		return taille;
+	}
 
-	/**
-	 * Fonction de compatibilité avec l'autre type
-	 * @param autre
-	 * @return
-	 */
-	public boolean compareTo(DTYPE autre);
-	
+	protected String nom;
 
+	public String getNom() {
+		return nom;
+	}
 
-	public String toString();
+	public DTYPE(String n, int t) {
+		nom = n;
+		taille = t;
+	}
+
+	public boolean compareTo(DTYPE autre) {
+		return nom.equals(autre.nom);
+	}
+
+	public String toString() {
+		return nom + "(" + taille + ")";
+	}
 }
