@@ -109,37 +109,82 @@ do
 end
 }
 ENTITES -> ;
-ENTITES -> ENTITE #tds ENTITES ;
-global 
+ENTITES -> #gen ENTITE #dep #tds ENTITES #dep2;
+global
+#gen {
+do
+  --TODO
+end
+}
+#dep {
+do
+  ENTITES1^hdep := ENTITE^dep;
+end
+}
+#dep2 {
+do
+  ENTITES^dep := ENTITES1^dep;
+end
+}
 #tds {
 do
 
-
+    --TODO
 
 end
 }
 -- definition d'un nom de type (commence par une majuscule)
-ENTITE -> typedef TYPE identc pv ;
+ENTITE -> typedef TYPE identc pv #dep;
+#dep {
+do
+  ENTITE^dep := ENTITE^hdep;
+end
+}
 -- definition d'une variable globale ou d'une fonction
 -- (commence par une minuscule)
-ENTITE ->  TYPE ident DECL #code ;
+ENTITE ->  TYPE ident #fct DECL #code ;
 global
-    it : INFOTYPE;
+    iv : INFOVAR;
+#idfct {
+do
+  DECL^ident := ident^txt;
+  DECL^tailleretour := TYPE^type.getTaille();
+end
+}
 #code {
 do
   if !DECL^est_fonction then
-    it := new INFOTYPE(TYPE^type);
-    ENTITE^code := ENTITE^tam.genDecl(ident^txt, it, ENTITE^tam.genPush(it));
+    iv := new INFOVAR(TYPE^type, ENTITE^hdep);
+    ENTITE^dep := ENTITE^hdep+1;
+    ENTITE^code := ENTITE^tam.genDecl(ident^txt, iv, ENTITE^tam.genPush(iv));
   else
-   
+    ENTITE^code := DECL^code;
   end
 end
 }
 -- Variable
-DECL -> pv;
-DECL -> FONCTION ;
+DECL -> pv #fct;
+#fct {
+do
+  DECL^est_fonction := false;
+  DECL^code := "";
+end
+}
+DECL -> FONCTION #fct ;
+#fct {
+do
+  DECL^est_fonction:=true;
+  DECL^code := FONCTION^code;
+end
+}
 -- Fonction
-FONCTION ->  paro PARFS parf BLOC ;
+FONCTION ->  paro PARFS parf BLOC #code;
+global
+#code {
+do
+  FONCTION^code := FONCTION^tam.genFonction(FONCTION^tam.genEtiq(), PARFS^taillepars, FONCTION^tailleretour, BLOC^code);
+end
+}
 -- parametres de fonctions
 PARFS ->  ;
 PARFS ->  PARF PARFSX ;
@@ -166,22 +211,74 @@ CHAMPS -> ;
 CHAMPS -> CHAMP CHAMPS ;
 CHAMP -> TYPE ident pv;
 -- corps de fonction et bloc d'instructions
-BLOC ->  aco INSTS acf ;
+BLOC ->  aco INSTS acf #code;
+#code {
+do
+  BLOC^code := INSTS^code;
+end
+}
 -- instructions
-INSTS ->   ;
-INSTS ->  INST INSTS  ;
+INSTS ->   #code;
+#code {
+do
+  INSTS^code :="";
+end
+}
+INSTS ->  INST INSTS  #code ;
+#code {
+do
+  INSTS^code := INST^code + INSTS1^code;
+end
+}
 -- declaration de variable locale avec ou sans init 
-INST ->  TYPE ident AFFX pv ;
+INST ->  TYPE ident AFFX pv #code;
+#code {
+do
+  --TODO
+end
+}
 -- instruction expression (affectation et appel de procedure)
-INST -> E pv ;
+INST -> E pv #code;
+#code {
+do
+  INST^code := E^code;
+end
+}
 -- bloc d'instructions
-INST ->  BLOC  ;
+INST ->  BLOC  #code;
+#code {
+do
+  INST^code := BLOC^code;
+end
+}
 -- conditionnelle
-INST ->   si paro E parf BLOC SIX ;
-SIX ->    sinon BLOC ;
-SIX -> ;
+INST ->   si paro E parf BLOC SIX #code;
+#code {
+do
+  
+  INST^code := INST^tam.genIf(E^code, BLOC^code, SIX^code);
+end
+}
+SIX ->    sinon BLOC #code;
+#code {
+do
+  SIX^code := BLOC^code;
+end
+}
+SIX -> #code;
+#code {
+do
+  SIX^code := "";
+end
+}
 -- retour de fonction
-INST ->  retour  E pv ;
+INST ->  retour  E pv #code;
+#code {
+do
+  INST^code := E^code;
+
+end
+}
 
 
 -- les expressions -------------
@@ -226,11 +323,28 @@ OPMUL -> mod ;
 OPMUL -> et ;
 -- expressions de base
 -- Constante entiere
-F -> entier   ;
+F -> entier #gen  ;
+#gen {
+do
+    F^type := new DTYPE("entier", 1);
+    F^code_est_adresse := false;
+    F^code := F^tam.genCst(entier^txt);
+    F^adresse := -1;
+end
+}
 -- Constante chaine
-F -> chaine ;
+F -> chaine #gen;
+
 -- Constante caractere
-F -> caractere ;
+F -> caractere #gen;
+#gen {
+do
+    F^type := new DTYPE("caractere", 1);
+    F^code_est_adresse := false;
+    F^code := F^tam.genCst(caractere^txt);
+    F^adresse := -1;
+end
+}
 -- expression unaire
 F ->  OPUN  F  ;
 -- operateurs unaires

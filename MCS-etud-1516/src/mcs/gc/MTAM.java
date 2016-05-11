@@ -31,8 +31,8 @@ public class MTAM extends AbstractMachine {
 
 	public String genFonction(String etiquette, int taillepars,
 			int tailleretour, String code) {
-		return "_" + etiquette + ":\n" + code + "\tRETURN (" + taillepars + ") "
-				+ tailleretour + "\n";
+		return "_" + etiquette + ":\n" + code + "\tRETURN (" + tailleretour + ") "
+				+ taillepars + "\n";
 
 	}
 
@@ -44,7 +44,7 @@ public class MTAM extends AbstractMachine {
 	// genere le code pour une declaration (avec initialisation)
 	public String genDecl(String n, INFOVAR i, String t) {
 		int taille = i.getType().getTaille();
-		return "   ; declaration de " + n + " en " + i.getDep() + "/LB"
+		return "   ; declaration de " + n + " en " + i.getEmpl() + "/LB"
 				+ " taille = " + taille + "\n" + t + "; fin de declaration de "
 				+ n + "\n";
 	}
@@ -75,7 +75,7 @@ public class MTAM extends AbstractMachine {
 		}
 	}
 
-	public String genPush(INFOTYPE i) {
+	public String genPush(INFOVAR i) {
 		int taille = i.getType().getTaille();
 		return "\tPUSH " + taille + "\n";
 	}
@@ -83,7 +83,8 @@ public class MTAM extends AbstractMachine {
 	public String genCst(String v) {
 		return "\tLOADL " + v + "\n";
 	}
-
+	
+	
 	public String genFree(int i) {
 		// TODO Auto-generated method stub
 		return "\tPOP(0)" + i + "\n";
