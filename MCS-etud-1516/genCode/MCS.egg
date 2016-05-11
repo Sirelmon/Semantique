@@ -109,12 +109,32 @@ do
 end
 }
 ENTITES -> ;
-ENTITES -> ENTITE ENTITES ;
+ENTITES -> ENTITE #tds ENTITES ;
+global 
+#tds {
+do
+
+
+
+end
+}
 -- definition d'un nom de type (commence par une majuscule)
 ENTITE -> typedef TYPE identc pv ;
 -- definition d'une variable globale ou d'une fonction
 -- (commence par une minuscule)
-ENTITE ->  TYPE ident DECL ;
+ENTITE ->  TYPE ident DECL #code ;
+global
+    it : INFOTYPE;
+#code {
+do
+  if !DECL^est_fonction then
+    it := new INFOTYPE(TYPE^type);
+    ENTITE^code := ENTITE^tam.genDecl(ident^txt, it, ENTITE^tam.genPush(it));
+  else
+   
+  end
+end
+}
 -- Variable
 DECL -> pv;
 DECL -> FONCTION ;
