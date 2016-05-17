@@ -234,7 +234,7 @@ end
 INST ->  TYPE ident AFFX pv #code;
 #code {
 do
-  --TODO
+  -- TODO
 end
 }
 -- instruction expression (affectation et appel de procedure)
@@ -289,10 +289,26 @@ end
 -- T = expression figurant dans une expression additive (TERME)
 -- F = expression figurant dans une expression multiplicative (FACTEUR)
 -----------------------------------------------------------------------
-E ->   A  AFFX ;
+E ->   A  AFFX #code;
+#code {
+do
+
+end
+}
 -- affectation
-AFFX -> affect  A  ;
-AFFX -> ;
+AFFX -> affect  A  #code;
+#code {
+do
+  -- TODO
+end
+}
+AFFX -> #code;
+#code {
+do
+  AFFX^code := "";
+end 
+}
+
 -- relation
 A ->   R AX  ;
 AX -> OPREL R;
@@ -304,10 +320,35 @@ OPREL -> infeg ;
 OPREL -> supeg ;
 OPREL -> eg ;
 OPREL -> neg ;
-R ->  T  RX ;
+R ->  T #hcode RX #code;
+#hcode {
+do
+  RX^hcode := T^code;
+end
+}
+#code {
+do
+  R^code := RX^code;
+end
+}
 -- additions ...
-RX ->   OPADD  T RX  ;
-RX -> ;
+RX ->   OPADD  T #hcode RX #code ;
+#hcode {
+do
+  RX1^hcode := RX^hcode + T^code + RX^tam.genSubr(OPADD^op, T^type);
+end
+}
+#code {
+do
+  RX^code := RX1^code;
+end
+}
+RX -> #code;
+#code {
+do
+  RX^code := RX^hcode;
+end
+}
 -- operateurs additifs
 OPADD -> plus ;
 OPADD -> moins ;

@@ -131,6 +131,43 @@ public class MTAM extends AbstractMachine {
 				+ "\n\tSUBR Iadd\n";
 	}
 
+	public String genSubr(String op, DTYPE type) {
+		switch (type.getNom())
+		case "int" :
+			switch (op)
+				case "plus" :
+					return "\tSUBR IAdd\n";
+				case "moins" :
+					return "\tSUBR ISub\n";
+				case "ou" :
+					return "\tSUBR BOr\n";
+				case "mult" :
+					return "\tSUBR IMul\n";
+				case "div" :
+					return "\tSUBR IDiv\n";
+				case "mod" :
+					return "\tSUBR IMod\n";
+				case "et" :
+					return "\tSUBR BAnd\n";
+		case "char" :
+			/*switch (op)
+				case "plus" :
+					return "\tSUBR IAdd\n";
+				case "moins" :
+					return "\tSUBR ISub\n";
+				case "ou" :
+					return "\tSUBR BOr\n";
+				case "mult" :
+					return "\tSUBR IMul\n";
+				case "div" :
+					return "\tSUBR IDiv\n";
+				case "mod" :
+					return "\tSUBR IMod\n";
+				case "et" :
+					return "\tSUBR BAnd\n";
+			 */
+	}
+	
 	public String genComment(String c) {
 		return "; " + c + "\n";
 	}
