@@ -18,14 +18,20 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE, PTRS;
- inh htype: DTYPE for PTRS,DECL;
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP;
+ inh htype: DTYPE for PTRS,DECL,FONCTION;
+ inh hdep : INTEGER for INSTS, INST , CHAMPS;
+ syn dep : INTEGER for INST , INSTS;
+ inh champs : LCHAMPS for CHAMPS,CHAMP;
+ syn para: LinkedHashMap for PARF,PARFS,PARFSX;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
-inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION, PARFS, TYPE, STYPE, CHAMPS, CHAMP, INST,INSTS, BLOC;
-inh nom : STRING for DECL;
+inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS, TYPE, STYPE, CHAMPS, CHAMP, INST,INSTS, BLOC;
+inh nom : STRING for DECL,FONCTION;
+syn hnom : STRING for CHAMP;
+inh infofon : INFOFONC for BLOC;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -169,49 +175,133 @@ do
     end
 end
 }
-DECL -> FONCTION #def;
--- Fonction
-FONCTION ->  paro PARFS parf BLOC ;
--- parametres de fonctions
-PARFS ->  ;
-PARFS ->  PARF PARFSX ;
-PARFSX ->  ;
-PARFSX ->  virg PARF PARFSX ;
-PARF ->  TYPE ident ;
--- les types (de base, noms, struct et pointeurs)
-TYPE -> STYPE  PTRS #type ;
-#type {
-do 
+DECL -> #def FONCTION;
+#def{
+local
+i :INFO;
+iff : INFOFONC;
+do
+    i := DECL^tds.chercherGlobalement(DECL^nom);
+    if i /= nil then
+      error(B_01, DECL^nom);
+    else
+       FONCTION^nom := DECL^nom;
+       FONCTION^htype := DECL^htype;
+       call DECL^tds.inserer(DECL^nom, i);
+    end
+end
+}
 
+-- Fonction
+FONCTION ->    paro #gen2 PARFS #gen parf BLOC;
+#gen2{
+local
+t: TDS;
+do
+    t := new TDS(FONCTION^tds);
+    PARFS^tds := t;
+end
+}
+
+#gen{
+local
+t : TDS;
+iff:INFOFONC;
+do
+    t := new TDS(PARFS^tds);
+    iff := new INFOFONC(FONCTION^nom, FONCTION^htype,PARFS^para,t) ;
+    BLOC^infofon:= iff;
+    
+end
+}
+
+
+-- parametres de fonctions
+PARFS -> #gen ;
+#gen{
+local
+do
+    PARFS^para:= new LinkedHashMap();
+end
+}
+
+PARFS ->  PARF PARFSX #GEN ;
+#GEN{
+local
+m : LinkedHashMap;
+do
+    m := new LinkedHashMap();
+    m.putAll(PARF^para);
+    m.putAll(PARFSX^para);
+    PARFS^para := m;
+end
+}
+PARFSX -> #gen ;
+#gen{
+local
+do
+    PARFSX^para:= new LinkedHashMap();
+end
+}
+
+PARFSX ->  virg PARF PARFSX #GEN ;
+#GEN{
+local
+m : LinkedHashMap;
+do
+    m := new LinkedHashMap();
+    m.putAll(PARF^para);
+    m.putAll(PARFSX1^para);
+    PARFSX^para:=m;
+end
+}
+
+PARF ->  TYPE ident #gen;
+#gen{
+local
+i:INFOVAR;
+m: LinkedHashMap;
+do
+    i := new INFOVAR(TYPE^type,TYPE^type.getTaille());
+    m := new LinkedHashMap();
+    m.put(ident^txt,i);
+    PARF^tds;
+end
+}
+
+-- les types (de base, noms, struct et pointeurs)
+TYPE -> STYPE #type1 PTRS #type2 ;
+#type1 {
+do 
+    PTRS^htype := STYPE^type;
 end 
 }
 
+#type2 {
+do 
+    TYPE^type := PTRS^type;
+end 
+}
 -- type de base
 -- des * pour definir un pointeur
 PTRS -> #type;
 #type{
 do
-PTRS^type:=PTRS^htype;
+    PTRS^type:=PTRS^htype;
 end
 }
 
 
 PTRS -> mult #type1 PTRS #type;
-
 #type1{
  local
   p : POINTEUR ;
 
 do
-  match PTRS^htype
-  with POINTEUR then
-    p := PTRS^htype;
-    PTRS1^htype := p.getType();
-   else
-    error(B_11, PTRS^htype);
-  end
+    PTRS1^htype := new POINTEUR(PTRS^htype);
 end
 }
+
 #type {
 do
 PTRS^type:=PTRS1^type;
@@ -266,13 +356,57 @@ STYPE -> identc #type;
 }
 -------------  
 -- et struct
-STYPE -> struct aco CHAMPS acf ;
+STYPE -> struct aco #ch CHAMPS acf  #type ;
+global 
+ lc : LCHAMPS ;
+#ch {
+do
+  lc := new LCHAMPS();
+  CHAMPS^champs := lc;
+  CHAMPS^hdep := 0;
+end
+}
+
+#type {
+ do
+   STYPE^type := new STRUCT(lc);
+ end
+}
+
 CHAMPS -> ;
 -- un nom de champ commence par une minuscule
-CHAMPS -> CHAMP CHAMPS ;
-CHAMP -> TYPE ident pv;
+CHAMPS -> CHAMP #ch CHAMPS ;
+#ch {
+ local
+  c : CHAMP ;
+ do
+  c := CHAMPS^champs.chercher(CHAMP^hnom);
+    if c /= nil then
+       error(B_00, CHAMP^hnom);
+    else    
+      c := new CHAMP(CHAMP^hnom, CHAMP^type, CHAMPS^hdep);
+     call CHAMPS^champs.inserer(c);
+     CHAMPS1^hdep := CHAMPS^hdep +CHAMP^type.getTaille();
+    end
+ end
+}
+
+CHAMP -> TYPE ident pv #gen;
+#gen {
+do
+    CHAMP^hnom:=ident^txt;
+    CHAMP^type := TYPE^type;
+end
+}
+
 -- corps de fonction et bloc d'instructions
-BLOC ->  aco INSTS acf ;
+BLOC -> #gen aco INSTS acf ;
+#gen{
+local
+do
+    
+end
+}
 -- instructions
 INSTS ->   ;
 INSTS ->  INST INSTS  ;
