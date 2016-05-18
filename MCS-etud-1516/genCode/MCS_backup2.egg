@@ -428,7 +428,6 @@ F -> ident #hcode FX #code ;
 local
 i : INFO;
 iv : INFOVAR;
-i_f : INFOFONC;
 t : DTYPE;
 e : Emplacement; 
 do
@@ -447,12 +446,7 @@ do
             
             
 	        
-	else match i
-        with INFOFONC then
-            i_f := i;
-            FX^hcode := F^machine.genCall(i_f.getEtiq());
-    else
-            
+	else
         error(B_02145, ident^txt);
 	end
 end
@@ -499,17 +493,7 @@ end
 -- acces champ pointeur
 FX ->   arrow  ident FX ;
 -- appel de sous-programme
-FX ->   paro ES parf #hcode FX #code;
-#hcode {
-do
-  FX1^hcode := ES^code + FX1^hcode;
-end
-}
-#code {
-do
-  FX^code := FX1^code;
-end
-}
+FX ->   paro ES parf FX;
 -- arguments appel de sous-programme
 ES -> ;
 ES -> E ESX  ;
