@@ -156,7 +156,7 @@ do
   if !DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, ENTITE^hdep);
     ENTITE^dep := ENTITE^hdep+1;
-    ENTITE^code := ENTITE^tam.genDecl(ident^txt, iv, ENTITE^tam.genPush(iv));
+    ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv));
   else
     ENTITE^code := DECL^code;
   end
@@ -182,7 +182,7 @@ FONCTION ->  paro PARFS parf BLOC #code;
 global
 #code {
 do
-  FONCTION^code := FONCTION^tam.genFonction(FONCTION^tam.genEtiq(), PARFS^taillepars, FONCTION^tailleretour, BLOC^code);
+  FONCTION^code := FONCTION^machine.genFonction(FONCTION^machine.genEtiq(), PARFS^taillepars, FONCTION^tailleretour, BLOC^code);
 end
 }
 -- parametres de fonctions
@@ -256,7 +256,7 @@ INST ->   si paro E parf BLOC SIX #code;
 #code {
 do
   
-  INST^code := INST^tam.genIf(E^code, BLOC^code, SIX^code);
+  INST^code := INST^machine.genIf(E^code, BLOC^code, SIX^code);
 end
 }
 SIX ->    sinon BLOC #code;
@@ -335,7 +335,7 @@ end
 RX ->   OPADD  T #hcode RX #code ;
 #hcode {
 do
-  RX1^hcode := RX^hcode + T^code + RX^tam.genSubr(OPADD^op, T^type);
+  RX1^hcode := RX^hcode + T^code + RX^machine.genSubr(OPADD^op, T^type);
 end
 }
 #code {
@@ -368,7 +368,7 @@ end
 TX ->   OPMUL  F #hcode TX #code ;
 #hcode {
 do
-  TX1^hcode := TX^hcode + F^code + RX^tam.genSubr(OPMUL^op, F^type);
+  TX1^hcode := TX^hcode + F^code + RX^machine.genSubr(OPMUL^op, F^type);
 end
 }
 #code {
@@ -394,7 +394,7 @@ F -> entier #gen  ;
 do
     F^type := new DTYPE("entier", 1);
     F^code_est_adresse := false;
-    F^code := F^tam.genCst(entier^txt);
+    F^code := F^machine.genCst(entier^txt);
     F^adresse := -1;
 end
 }
@@ -407,7 +407,7 @@ F -> caractere #gen;
 do
     F^type := new DTYPE("caractere", 1);
     F^code_est_adresse := false;
-    F^code := F^tam.genCst(caractere^txt);
+    F^code := F^machine.genCst(caractere^txt);
     F^adresse := -1;
 end
 }
@@ -423,10 +423,67 @@ F -> null  ;
 F ->  paro E parf FX ;
 F ->  paro TYPE parf  F ;
 F -> mult F ;
-F -> ident FX ;
-FX -> ;
+F -> ident #hcode FX #code ;
+#hcode {
+local
+i : INFO;
+iv : INFOVAR;
+t : DTYPE; 
+do
+    i:=F^tds.chercherGlobalement(ident^txt);
+	match i 
+        with INFOVAR then
+		    iv := i;
+            t := iv.getType();
+		    match t
+            with STRUCT then
+                FX^hcode := F^machine.genAdr(iv.getEmpl().getDep());
+            else
+                error(B_0546125, ident^txt);
+            end
+            
+            
+	        
+	else
+        error(B_02145, ident^txt);
+	end
+end
+}
+#code {
+do
+    F^code := FX^code;
+end
+}
+
+
+FX -> #code;
+#code {
+do
+    FX^code:=FX^hcode;
+end
+}
+
 -- acces champ
-FX ->   pt  ident FX ;
+FX ->   pt  ident #hcode FX #code ;
+#hcode {
+local 
+iv : INFOVAR;
+do
+    iv := FX^tds.chercherGlobalement(ident^txt);
+    if (FX^hest_adresse) then
+        FX1^hcode := FX^hcode + FX^machine.genAdrField(iv.getType().getEmpl().getDep()); 
+    else
+        FX1^hcode := FX^hcode + FX^machine.genAdrField(iv.getType().getEmpl().getDep()) + FX^machine.genReadIndirectMem(iv.getType().getTaille());
+    end
+end
+}
+
+#code {
+do
+    FX^code:=FX1^code;
+end
+}
+
 -- acces champ pointeur
 FX ->   arrow  ident FX ;
 -- appel de sous-programme

@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 
 import mcs.tds.INFOTYPE;
 import mcs.tds.INFOVAR;
+import mcs.type.DTYPE;
 
 /**
  * La machine TAM et ses fonctions de generation
