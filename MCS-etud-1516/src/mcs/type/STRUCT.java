@@ -17,8 +17,6 @@ public class STRUCT extends DTYPE {
 	public boolean compareTo(DTYPE autre) {
 		if (autre instanceof STRUCT)
 			return champs.compareTo(((STRUCT) autre).champs);
-		if (autre instanceof TUPLE)
-			return getTypes().compareTo(((TUPLE) autre).getTypes());
 		return false;
 	}
 

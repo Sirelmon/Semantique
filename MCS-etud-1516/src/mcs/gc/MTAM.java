@@ -133,8 +133,10 @@ public class MTAM extends AbstractMachine {
 
 	public String genSubr(String op, DTYPE type) {
 		switch (type.getNom())
+		{
 		case "int" :
 			switch (op)
+			{
 				case "plus" :
 					return "\tSUBR IAdd\n";
 				case "moins" :
@@ -149,6 +151,7 @@ public class MTAM extends AbstractMachine {
 					return "\tSUBR IMod\n";
 				case "et" :
 					return "\tSUBR BAnd\n";
+			}
 		case "char" :
 			/*switch (op)
 				case "plus" :
@@ -166,6 +169,7 @@ public class MTAM extends AbstractMachine {
 				case "et" :
 					return "\tSUBR BAnd\n";
 			 */
+		}
 	}
 	
 	public String genComment(String c) {

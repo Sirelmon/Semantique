@@ -354,9 +354,34 @@ OPADD -> plus ;
 OPADD -> moins ;
 OPADD -> ou ;
 -- multiplication, ...
-T ->  F  TX  ;
-TX ->   OPMUL  F TX  ;
-TX ->  ;
+T ->  F #hcode TX #code ;
+#hcode {
+do
+  TX^hcode := F^code;
+end
+}
+#code {
+do
+  T^code := TX^code;
+end
+}
+TX ->   OPMUL  F #hcode TX #code ;
+#hcode {
+do
+  TX1^hcode := TX^hcode + F^code + RX^tam.genSubr(OPMUL^op, F^type);
+end
+}
+#code {
+do
+  TX^code := TX1^code;
+end
+}
+TX -> #code ;
+#code {
+do
+  TX^code := TX^hcode;
+end
+}
 -- operateurs multiplicatifs
 OPMUL -> mult ;
 OPMUL -> div ;
