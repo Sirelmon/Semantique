@@ -18,7 +18,7 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP;
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX;
  inh htype: DTYPE for PTRS,DECL,FONCTION;
  inh hdep : INTEGER for INSTS, INST , CHAMPS;
  syn dep : INTEGER for INST , INSTS;
@@ -28,10 +28,11 @@ inh machine : IMachine for
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
-inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS, TYPE, STYPE, CHAMPS, CHAMP, INST,INSTS, BLOC;
-inh nom : STRING for DECL,FONCTION;
+inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
+T, TX, ES, ESX, R, RX;
+inh nom : STRING for DECL,FONCTION, BLOC, INST, INSTS, SIX;
 syn hnom : STRING for CHAMP;
-inh infofon : INFOFONC for BLOC;
+inh infofon : INFOFONC for FONCTION;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -180,7 +181,9 @@ DECL -> #def FONCTION;
 local
 i :INFO;
 iff : INFOFONC;
+m :LinkedHashMap;
 do
+    m := new LinkedHashMap();
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
       error(B_01, DECL^nom);
@@ -188,32 +191,43 @@ do
        FONCTION^nom := DECL^nom;
        FONCTION^htype := DECL^htype;
        call DECL^tds.inserer(DECL^nom, i);
+       iff := new INFOFONC(DECL^nom, DECL^htype,m,DECL^tds);
+       FONCTION^infofon:= iff;
     end
 end
 }
-
 -- Fonction
-FONCTION ->    paro #gen2 PARFS #gen parf BLOC;
+FONCTION ->    paro #gen2 PARFS parf #gen BLOC  ;
 #gen2{
 local
 t: TDS;
+t2: TDS;
 do
     t := new TDS(FONCTION^tds);
     PARFS^tds := t;
+    t2 := new TDS(t);
+    BLOC^tds := t2;
+    
+    FONCTION^infofon.setTDS(t2); 
+    
 end
 }
 
 #gen{
 local
 t : TDS;
-iff:INFOFONC;
+m : LinkedHashMap;
 do
-    t := new TDS(PARFS^tds);
-    iff := new INFOFONC(FONCTION^nom, FONCTION^htype,PARFS^para,t) ;
-    BLOC^infofon:= iff;
+    m:=FONCTION^infofon.getParas();
+    m.putAll(PARFS^para);
+    BLOC^nom:= FONCTION^nom;
+    
+   
     
 end
 }
+
+
 
 
 -- parametres de fonctions
@@ -265,7 +279,8 @@ do
     i := new INFOVAR(TYPE^type,TYPE^type.getTaille());
     m := new LinkedHashMap();
     m.put(ident^txt,i);
-    PARF^tds;
+    PARF^para := m;
+    call PARF^tds.inserer(ident^txt,i);
 end
 }
 
@@ -400,13 +415,22 @@ end
 }
 
 -- corps de fonction et bloc d'instructions
-BLOC -> #gen aco INSTS acf ;
-#gen{
-local
+BLOC -> aco #tds INSTS acf #gen ;
+global        -- globale aux actions de cette regle
+  t : TDS;    -- pour voir la TDS du bloc
+#tds {
 do
-    
+   t :=  new TDS(BLOC^tds);
+   INSTS^tds := t;
 end
 }
+
+#gen {
+do
+   write "; tds:\n" + t;
+end
+}
+
 -- instructions
 INSTS ->   ;
 INSTS ->  INST INSTS  ;
@@ -415,24 +439,78 @@ INST ->  TYPE ident AFFX pv ;
 -- instruction expression (affectation et appel de procedure)
 INST -> E pv ;
 -- bloc d'instructions
-INST ->  BLOC  ;
+INST ->  #gen BLOC  ;
+#gen{
+local
+t :TDS;
+do
+    t := new TDS(INST^tds);
+    BLOC^tds := t;
+end
+}
 -- conditionnelle
-INST ->   si paro E parf BLOC SIX ;
-SIX ->    sinon BLOC ;
-SIX -> ;
+INST ->   si paro E parf #gen BLOC SIX ;
+#gen{
+local
+t :TDS;
+do
+    t := new TDS(INST^tds);
+    BLOC^tds := t;
+end
+}
+SIX -> sinon #gen BLOC ;
+#gen{
+local
+t :TDS;
+do
+    t := new TDS(SIX^tds);
+    BLOC^tds := t;
+end
+}
+SIX ->;
+
 -- retour de fonction
-INST ->  retour  E pv ;
+INST ->  retour  E #type pv ;
+
+#type{
+local
+i: INFO;
+t: DTYPE;
+iff: INFOFONC;
+do
+i := INST^tds.chercherGlobalement(INST^nom);
+    if i = nil then
+    error(B_01, INST^nom);
+   else
+   match i 
+   with INFOFONC then 
+     iff:=i;
+     t := iff.getRtype();
+       if ~(t.compareTo(E^type)) then 
+         error(B_05, "mauvais type de retour"+ INST^nom);
+       end
+    end
+   end
+end
+}
+
 
 
 -- les expressions -------------
 -----------------------------------------------------------------------
 -- E = expression (y compris l'affectation)
 -- A = expression figurant dans une affectation
--- R = expression figurant dans une expresion relationnelle
--- T = expression figurant dans une expression additive (TERME)
--- F = expression figurant dans une expression multiplicative (FACTEUR)
+-- R = expression figurant dans une expresion relationnelle (boolean ==)
+-- T = expression figurant dans une expression additive (TERME) (+ -)
+-- F = expression figurant dans une expression multiplicative (FACTEUR  (* /))
 -----------------------------------------------------------------------
-E ->   A  AFFX ;
+E ->   A #type AFFX ;
+#type{
+local
+do
+   
+end
+}
 -- affectation
 AFFX -> affect  A  ;
 AFFX -> ;
@@ -466,23 +544,66 @@ OPMUL -> mod ;
 OPMUL -> et ;
 -- expressions de base
 -- Constante entiere
-F -> entier   ;
+F -> entier   #type;
+
+#type{
+do
+       F^type := new DTYPE("int", 1);
+    -- il faut encore définir la bonne taille
+end
+}
 -- Constante chaine
-F -> chaine ;
+F -> chaine #type;
+
+#type{
+do
+       F^type := new DTYPE("string", 1);
+    -- il faut encore définir la bonne taille
+end
+}
 -- Constante caractere
-F -> caractere ;
+F -> caractere #type;
+#type{
+do
+       F^type := new DTYPE("char", 1);
+    -- il faut encore définir la bonne taille
+end
+}
 -- expression unaire
-F ->  OPUN  F  ;
+F ->  OPUN  F #type ;
+#type{
+do
+F^type := F1^type;
+end
+}
+
 -- operateurs unaires
 OPUN -> plus ;
 OPUN -> moins ;
 OPUN -> non;
 -- pointeur NULL
-F -> null  ;
+F -> null #type ;
+
+#type{
+do
+F^type := new POINTEUR(null);
+end
+}
 -- expression parenthesee
 F ->  paro E parf FX ;
-F ->  paro TYPE parf  F ;
-F -> mult F ;
+F ->  paro TYPE parf  F #type ;
+#type{
+do
+F^type:= TYPE^type;
+end
+}
+
+F -> mult F #type ;
+#type{
+do
+F^type := F1^type;
+end
+}
 F -> ident FX ;
 FX -> ;
 -- acces champ
