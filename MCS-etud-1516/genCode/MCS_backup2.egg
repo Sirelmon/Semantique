@@ -428,27 +428,36 @@ F -> ident #hcode FX #code ;
 local
 i : INFO;
 iv : INFOVAR;
+i_f : INFOFONC;
 t : DTYPE;
 e : Emplacement; 
 do
     i:=F^tds.chercherGlobalement(ident^txt);
-	match i 
+    match i 
         with INFOVAR then
-		    iv := i;
+            iv := i;
             e := iv.getEmpl();
             t := iv.getType();
-		    match t
+            match t
             with STRUCT then
                 FX^hcode := F^machine.genAdr(e.getDep());
+            else match t
+            with POINTEUR then
+                FX^hcode := F^machine.genReadMem(e.getDep());
             else
                 error(B_0546125, ident^txt);
             end
             
             
-	        
-	else
+            
+    else match i
+        with INFOFONC then
+            i_f := i;
+            FX^hcode := F^machine.genCall(i_f.getEtiq());
+    else
+            
         error(B_02145, ident^txt);
-	end
+    end
 end
 }
 #code {
@@ -491,9 +500,30 @@ end
 }
 
 -- acces champ pointeur
-FX ->   arrow  ident FX ;
+FX ->   arrow  ident #hcode FX #code;
+#hcode {
+local
+iv : INFOVAR;
+e : Emplacement;
+do
+    iv := FX^tds.chercherGlobalement(ident^txt);
+    e := iv.getEmpl();
+    -- verifier que F1 est un POINTEUR sur une STRUCT
+    FX1^hcode := FX^hcode + FX^machine.genAdrField(e.getDep());
+end
+}
 -- appel de sous-programme
-FX ->   paro ES parf FX;
+FX ->   paro ES parf #hcode FX #code;
+#hcode {
+do
+  FX1^hcode := ES^code + FX1^hcode;
+end
+}
+#code {
+do
+  FX^code := FX1^code;
+end
+}
 -- arguments appel de sous-programme
 ES -> ;
 ES -> E ESX  ;

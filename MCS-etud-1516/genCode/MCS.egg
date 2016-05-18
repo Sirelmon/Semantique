@@ -289,23 +289,28 @@ end
 -- T = expression figurant dans une expression additive (TERME)
 -- F = expression figurant dans une expression multiplicative (FACTEUR)
 -----------------------------------------------------------------------
-E ->   A  AFFX #code;
+E ->   A #hcode AFFX #code;
+#hcode {
+do
+    AFFX^hcode := A^code;
+end
+}
 #code {
 do
-
+    E^code := AFFX^code;
 end
 }
 -- affectation
-AFFX -> affect  A  #code;
+AFFX -> affect A  #code;
 #code {
 do
-  -- TODO
+    AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
 end
 }
 AFFX -> #code;
 #code {
 do
-  AFFX^code := "";
+  AFFX^code := AFFX^hcode;
 end 
 }
 
@@ -441,6 +446,9 @@ do
 		    match t
             with STRUCT then
                 FX^hcode := F^machine.genAdr(e.getDep());
+            else match t
+            with POINTEUR then
+                FX^hcode := F^machine.genReadMem(e.getDep());
             else
                 error(B_0546125, ident^txt);
             end
@@ -497,7 +505,18 @@ end
 }
 
 -- acces champ pointeur
-FX ->   arrow  ident FX ;
+FX ->   arrow  ident #hcode FX #code;
+#hcode {
+local
+iv : INFOVAR;
+e : Emplacement;
+do
+    iv := FX^tds.chercherGlobalement(ident^txt);
+    e := iv.getEmpl();
+    -- verifier que F1 est un POINTEUR sur une STRUCT
+    FX1^hcode := FX^hcode + FX^machine.genAdrField(e.getDep());
+end
+}
 -- appel de sous-programme
 FX ->   paro ES parf #hcode FX #code;
 #hcode {

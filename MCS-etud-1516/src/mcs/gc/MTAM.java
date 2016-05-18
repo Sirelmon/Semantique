@@ -128,8 +128,13 @@ public class MTAM extends AbstractMachine {
 	}
 
 	public String genAdrField(int dep) {
-		return "\t;Calcul deplacement struct " + dep + "\n" + "\tLOADL " + dep
+		// optimisation de code
+		if (dep == 0) {
+			return "";
+		} else {
+			return "\t;Calcul deplacement struct " + dep + "\n" + "\tLOADL " + dep
 				+ "\n\tSUBR Iadd\n";
+		}
 	}
 
 	public String genSubr(String op, DTYPE type) {
