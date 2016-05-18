@@ -18,21 +18,23 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX;
- inh htype: DTYPE for PTRS,DECL,FONCTION;
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX,FX;
+ inh htype: DTYPE for PTRS,DECL,FONCTION,FX;
  inh hdep : INTEGER for INSTS, INST , CHAMPS;
  syn dep : INTEGER for INST , INSTS;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
- syn para: LinkedHashMap for PARF,PARFS,PARFSX;
+ syn para: LinkedHashMap for PARF,PARFS,PARFSX,E,ES,ESX;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
-inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, R, RX;
-inh nom : STRING for DECL,FONCTION, BLOC, INST, INSTS, SIX;
+inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
+TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
+T, TX, ES, ESX, R, RX,F,FX;
+inh nom : STRING for DECL;
 syn hnom : STRING for CHAMP;
-inh infofon : INFOFONC for FONCTION;
+inh infofon : INFOFONC for FONCTION,BLOC,INST,SIX;
+inh info : INFO for FX;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -188,7 +190,6 @@ do
     if i /= nil then
       error(B_01, DECL^nom);
     else
-       FONCTION^nom := DECL^nom;
        FONCTION^htype := DECL^htype;
        call DECL^tds.inserer(DECL^nom, i);
        iff := new INFOFONC(DECL^nom, DECL^htype,m,DECL^tds);
@@ -220,10 +221,7 @@ m : LinkedHashMap;
 do
     m:=FONCTION^infofon.getParas();
     m.putAll(PARFS^para);
-    BLOC^nom:= FONCTION^nom;
-    
-   
-    
+    BLOC^infofon := FONCTION^infofon;
 end
 }
 
@@ -474,23 +472,12 @@ INST ->  retour  E #type pv ;
 
 #type{
 local
-i: INFO;
 t: DTYPE;
-iff: INFOFONC;
 do
-i := INST^tds.chercherGlobalement(INST^nom);
-    if i = nil then
-    error(B_01, INST^nom);
-   else
-   match i 
-   with INFOFONC then 
-     iff:=i;
-     t := iff.getRtype();
-       if ~(t.compareTo(E^type)) then 
-         error(B_05, "mauvais type de retour"+ INST^nom);
+    t := INST^infofon.getRtype();
+    if ~(t.compareTo(E^type)) then 
+         error(B_05, "mauvais type de retour"+ INST^infofon.getEtiq());
        end
-    end
-   end
 end
 }
 
@@ -590,7 +577,19 @@ F^type := new POINTEUR(null);
 end
 }
 -- expression parenthesee
-F ->  paro E parf FX ;
+F ->  paro E parf #type1 FX #type;
+#type1{
+local
+do
+FX^htype := E^type;
+end
+}
+#type{
+do
+    F^type:= E^type;
+end
+}
+
 F ->  paro TYPE parf  F #type ;
 #type{
 do
@@ -601,22 +600,162 @@ end
 F -> mult F #type ;
 #type{
 do
-F^type := F1^type;
+    F^type := F1^type;
 end
 }
-F -> ident FX ;
-FX -> ;
+-- donner les infos a FX
+F -> ident #GEN FX #type ;
+#GEN{
+local
+i :INFO;
+do
+    i := F^tds.chercherGlobalement(ident^txt);
+    if i = nil then
+        error(B_01,ident^txt);
+    else
+        FX^info := i;
+        FX^htype := i.getType();
+    end
+end
+}
+
+#type{
+do
+    F^type := FX^type;
+end
+}
+
+FX -> #type ;
+#type{
+do
+    FX^type := FX^info.getType();
+end
+}
+
 -- acces champ
-FX ->   pt  ident FX ;
+FX ->  pt  ident #a FX #type ;
+
+#a {
+local
+ s : STRUCT ;
+ t :DTYPE;
+ c : CHAMP;
+ lc : LCHAMPS;
+do
+    t := FX^info.getType(); 
+  match t
+  with STRUCT then
+    s := t;
+    lc := s.getChamps();
+    c := lc.chercher(ident^txt);
+    if c = nil then
+      error(B_10, ident^txt) ;
+    else
+      FX1^htype := c.getType();
+      
+    end    
+  else
+    error(B_09, t); 
+  end
+
+end
+}
+
+#type{
+do
+    FX^type := FX1^type;
+end
+}
+
 -- acces champ pointeur
-FX ->   arrow  ident FX ;
+FX ->   arrow ident #a FX #type ;
+#a {
+local
+p : POINTEUR ;
+t :DTYPE;
+code : STRING;
+do
+    t := FX^info.getType();
+    match t
+    with POINTEUR then
+        p := t;
+        FX1^htype := p.getType();
+    else
+        error(B_11, FX^htype);
+    end
+end
+}
+
+#type{
+do
+    FX^type := FX1^type;
+end
+}
+
+
 -- appel de sous-programme
-FX ->   paro ES parf FX;
+FX ->   paro ES parf #gen FX #type;
+#gen{
+local
+iff :INFOFONC;
+m : LinkedHashMap;
+do
+    match FX^info with INFOFONC then
+        iff := FX^info;
+        m := iff.getParas();
+        if ~(m.equals(ES^para)) then
+            error(B_08,"parametres pas eguaux");
+        end
+    end
+end
+}
+
+#type{
+do
+    FX^type := FX1^type;
+end
+}
+
 -- arguments appel de sous-programme
-ES -> ;
-ES -> E ESX  ;
-ESX ->  ;
-ESX -> virg E ESX ;
+ES -> #gen;
+#gen{
+local
+do
+    ES^para:= new LinkedHashMap();
+end
+}
+
+ES -> E ESX  #GEN;
+#GEN{
+local
+m : LinkedHashMap;
+do
+    m := new LinkedHashMap();
+    m.putAll(E^para);
+    m.putAll(ESX^para);
+    ES^para:=m;
+end
+}
+
+ESX ->  #gen;
+#gen{
+local
+do
+    ESX^para:= new LinkedHashMap();
+end
+}
+
+ESX -> virg E ESX #GEN;
+#GEN{
+local
+m : LinkedHashMap;
+do
+    m := new LinkedHashMap();
+    m.putAll(E^para);
+    m.putAll(ESX1^para);
+    ESX^para:=m;
+end
+}
 
 ------------- inline asm ----------------
 -- peut être utile pour implanter des sous-programmes
