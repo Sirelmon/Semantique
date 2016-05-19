@@ -289,28 +289,23 @@ end
 -- T = expression figurant dans une expression additive (TERME)
 -- F = expression figurant dans une expression multiplicative (FACTEUR)
 -----------------------------------------------------------------------
-E ->   A #hcode AFFX #code;
-#hcode {
-do
-    AFFX^hcode := A^code;
-end
-}
+E ->   A  AFFX #code;
 #code {
 do
-    E^code := AFFX^code;
+
 end
 }
 -- affectation
-AFFX -> affect A  #code;
+AFFX -> affect  A  #code;
 #code {
 do
-    AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
+  -- TODO
 end
 }
 AFFX -> #code;
 #code {
 do
-  AFFX^code := AFFX^hcode;
+  AFFX^code := "";
 end 
 }
 
@@ -438,12 +433,12 @@ t : DTYPE;
 e : Emplacement; 
 do
     i:=F^tds.chercherGlobalement(ident^txt);
-	match i 
+    match i 
         with INFOVAR then
-		    iv := i;
+            iv := i;
             e := iv.getEmpl();
             t := iv.getType();
-		    match t
+            match t
             with STRUCT then
                 FX^hcode := F^machine.genAdr(e.getDep());
             else match t
@@ -454,15 +449,15 @@ do
             end
             
             
-	        
-	else match i
+            
+    else match i
         with INFOFONC then
             i_f := i;
             FX^hcode := F^machine.genCall(i_f.getEtiq());
     else
             
         error(B_02145, ident^txt);
-	end
+    end
 end
 }
 #code {

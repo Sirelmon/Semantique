@@ -18,8 +18,13 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
+<<<<<<< HEAD
  syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX,FX;
  inh htype: DTYPE for PTRS,DECL,FONCTION,FX;
+=======
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX;
+ inh htype: DTYPE for PTRS,DECL,FONCTION;
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
  inh hdep : INTEGER for INSTS, INST , CHAMPS;
  syn dep : INTEGER for INST , INSTS;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
@@ -28,13 +33,23 @@ inh machine : IMachine for
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
+<<<<<<< HEAD
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
 T, TX, ES, ESX, R, RX,F,FX;
 inh nom : STRING for DECL;
+=======
+inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
+T, TX, ES, ESX, R, RX;
+inh nom : STRING for DECL,FONCTION, BLOC, INST, INSTS, SIX;
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
 syn hnom : STRING for CHAMP;
+<<<<<<< HEAD
 inh infofon : INFOFONC for FONCTION,BLOC,INST,SIX;
 inh info : INFO for FX;
+=======
+inh infofon : INFOFONC for FONCTION;
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -221,7 +236,14 @@ m : LinkedHashMap;
 do
     m:=FONCTION^infofon.getParas();
     m.putAll(PARFS^para);
+<<<<<<< HEAD
     BLOC^infofon := FONCTION^infofon;
+=======
+    BLOC^nom:= FONCTION^nom;
+    
+   
+    
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
 end
 }
 
@@ -472,12 +494,32 @@ INST ->  retour  E #type pv ;
 
 #type{
 local
+<<<<<<< HEAD
 t: DTYPE;
 do
     t := INST^infofon.getRtype();
     if ~(t.compareTo(E^type)) then 
          error(B_05, "mauvais type de retour"+ INST^infofon.getEtiq());
        end
+=======
+i: INFO;
+t: DTYPE;
+iff: INFOFONC;
+do
+i := INST^tds.chercherGlobalement(INST^nom);
+    if i = nil then
+    error(B_01, INST^nom);
+   else
+   match i 
+   with INFOFONC then 
+     iff:=i;
+     t := iff.getRtype();
+       if ~(t.compareTo(E^type)) then 
+         error(B_05, "mauvais type de retour"+ INST^nom);
+       end
+    end
+   end
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
 end
 }
 
@@ -577,6 +619,7 @@ F^type := new POINTEUR(null);
 end
 }
 -- expression parenthesee
+<<<<<<< HEAD
 F ->  paro E parf #type1 FX #type;
 #type1{
 local
@@ -632,6 +675,24 @@ do
 end
 }
 
+=======
+F ->  paro E parf FX ;
+F ->  paro TYPE parf  F #type ;
+#type{
+do
+F^type:= TYPE^type;
+end
+}
+
+F -> mult F #type ;
+#type{
+do
+F^type := F1^type;
+end
+}
+F -> ident FX ;
+FX -> ;
+>>>>>>> branch 'master' of https://github.com/Sirelmon/Semantique.git
 -- acces champ
 FX ->  pt  ident #a FX #type ;
 
