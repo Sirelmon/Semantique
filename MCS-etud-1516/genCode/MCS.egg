@@ -315,9 +315,29 @@ end
 }
 
 -- relation
-A ->   R AX  ;
-AX -> OPREL R;
-AX ->  ;
+A ->   R #hcode AX #code ;
+#hcode {
+do
+  AX^hcode := R^code;
+end
+}
+#code {
+do
+  A^code := AX^code;
+end
+}
+AX -> OPREL R #code;
+#code {
+do
+  AX^code := AX^hcode + R^code + AX^machine.genSubr(OPREL^op, R^type);
+end
+}
+AX -> #code ;
+#code {
+do
+  AX^code := AX^hcode;
+end
+}
 -- operateurs relationnels
 OPREL -> inf ;
 OPREL -> sup ;
@@ -417,17 +437,49 @@ do
 end
 }
 -- expression unaire
-F ->  OPUN  F  ;
+F ->  OPUN  F  #code;
+#code {
+do
+  F^code := F1^code + F^machine.genSubr(OPUN^op, F^type);
+end
+}
 -- operateurs unaires
 OPUN -> plus ;
 OPUN -> moins ;
 OPUN -> non;
 -- pointeur NULL
-F -> null  ;
+F -> null #code ;
+#code {
+do
+  F^code := F^machine.genNull();
+end
+}
 -- expression parenthesee
-F ->  paro E parf FX ;
-F ->  paro TYPE parf  F ;
-F -> mult F ;
+F ->  paro E parf #hcode FX #code;
+#hcode {
+do
+  FX^hcode := E^code;
+end
+}
+#code {
+do
+  F^code := FX^code;
+end
+}
+F ->  paro TYPE parf  F #code;
+#code {
+do
+  --vérifier le cast
+  F^code := F1^code;
+end
+}
+F -> mult F #code;
+#code {
+do
+  -- vérifier que F1 est un pointeur
+  F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+end
+}
 F -> ident #hcode FX #code ;
 #hcode {
 local
@@ -530,10 +582,40 @@ do
 end
 }
 -- arguments appel de sous-programme
-ES -> ;
-ES -> E ESX  ;
-ESX ->  ;
-ESX -> virg E ESX ;
+ES -> #code;
+#code {
+do
+  ES^code := "";
+end
+}
+ES -> E #hcode ESX #code ;
+#hcode {
+do
+  ESX^hcode := E^code;
+end
+}
+#code {
+do
+  ES^code := ESX^code + E^code;
+end
+}
+ESX -> #code ;
+#code {
+do
+  ESX^code := ESX^hcode;
+end
+}
+ESX -> virg E #hcode ESX #code;
+#hcode {
+do
+  ESX1^hcode := ESX^hcode + E^code;
+end
+}
+#code {
+do
+  ESX^code := ESX1^code;
+end
+}
 
 ------------- inline asm ----------------
 -- peut être utile pour implanter des sous-programmes

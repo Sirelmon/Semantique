@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import mcs.tds.INFOTYPE;
 import mcs.tds.INFOVAR;
 import mcs.type.DTYPE;
+import mcs.type.OPERATEUR;
 
 /**
  * La machine TAM et ses fonctions de generation
@@ -132,44 +133,83 @@ public class MTAM extends AbstractMachine {
 				+ "\n\tSUBR Iadd\n";
 	}
 
-	public String genSubr(String op, DTYPE type) {
-		switch (type.getNom())
-		{
-		case "int" :
+	public String genNull() {
+		return "\tSUBR MVoid\n";
+	}
+	
+	public String genSubr(OPERATEUR op, DTYPE type) {
+		if (type.getNom().equals("int")) {
 			switch (op)
 			{
-				case "plus" :
+				case OPB_inf :
+					return "\tSUBR ILss\n";
+				case OPB_sup :
+					return "\tSUBR IGtr\n";
+				case OPB_infeg :
+					return "\tSUBR ILeq\n";
+				case OPB_supeg :
+					return "\tSUBR IGeq\n";
+				case OPB_eg :
+					return "\tSUBR IEq\n";
+				case OPB_neg :
+					return "\tSUBR INeq\n";
+				case OPB_plus :
 					return "\tSUBR IAdd\n";
-				case "moins" :
+				case OPB_moins :
 					return "\tSUBR ISub\n";
-				case "ou" :
+				case OPB_ou :
 					return "\tSUBR BOr\n";
-				case "mult" :
+				case OPB_mult :
 					return "\tSUBR IMul\n";
-				case "div" :
+				case OPB_div :
 					return "\tSUBR IDiv\n";
-				case "mod" :
+				case OPB_mod :
 					return "\tSUBR IMod\n";
-				case "et" :
+				case OPB_et :
 					return "\tSUBR BAnd\n";
+				case OPU_plus :
+					return "";
+				case OPU_moins :
+					return "\tSUBR INeg\n";
+				case OPU_non :
+					return "\tSUBR BNeg\n";
+				default :
+					return "";
 			}
-		case "char" :
-			/*switch (op)
-				case "plus" :
-					return "\tSUBR IAdd\n";
-				case "moins" :
-					return "\tSUBR ISub\n";
-				case "ou" :
+		} else if (type.getNom().equals("char")) {
+			switch (op)
+			{
+				case OPB_eg :
+					return "\tSUBR IEg\n";
+				case OPB_neg :
+					return "\tSUBR INeq\n";
+				case OPB_plus :
+					return "\tSUBR SConcat\n";
+				default :
+					return "";
+			}
+		} else if (type.getNom().equals("string")) {
+			switch (op)
+			{
+				case OPB_plus :
+					return "\tSUBR SConcat\n";
+				default :
+					return "";
+			}
+		} else if (type.getNom().equals("bool")) {
+			switch (op)
+			{
+				case OPB_ou :
 					return "\tSUBR BOr\n";
-				case "mult" :
-					return "\tSUBR IMul\n";
-				case "div" :
-					return "\tSUBR IDiv\n";
-				case "mod" :
-					return "\tSUBR IMod\n";
-				case "et" :
+				case OPB_et :
 					return "\tSUBR BAnd\n";
-			 */
+				case OPU_non :
+					return "\tSUBR BNeg\n";
+				default :
+					return "";
+			}
+		} else {
+			return "";
 		}
 	}
 	
