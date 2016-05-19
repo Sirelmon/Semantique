@@ -18,7 +18,7 @@ public class INFOFONC implements INFO{
 
 	protected DTYPE Rtype;
 	protected LinkedHashMap<String, INFO> paras;
-	protected TDS tds;
+	protected TDS tds; //TDS des variables locaux
 	protected String etiq;
 	
 	public DTYPE getRtype() {
