@@ -3,7 +3,7 @@ package mcs.type;
 import java.util.Collection;
 
 public enum OPERATEUR{
-	OPB_inf ("int"),
+	OPB_INF ("int"),
 	OPB_sup ("int"),
 	OPB_infeg ("int"),
 	OPB_supeg ("int"),
