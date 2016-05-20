@@ -30,4 +30,13 @@ public class DTYPE {
 	public String toString() {
 		return nom + "(" + taille + ")";
 	}
+	
+	public boolean OpCompat(int op){
+		return ( op == 1 && this.getNom().equals("entier"))
+			|| ( op == 3 && (this.getNom().equals("entier") || 
+							 this.getNom().equals("char") || 
+							 this.getNom().equals("string"))
+			|| ( op == 0));
+		 
+	}
 }
