@@ -1,6 +1,7 @@
 package mcs.tds;
 
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import mcs.gc.Emplacement;
 import mcs.type.DTYPE;
@@ -17,7 +18,7 @@ import mcs.type.DTYPE;
 public class INFOFONC implements INFO{
 
 	protected DTYPE Rtype;
-	protected LinkedHashMap<String, INFO> paras;
+	protected LinkedHashMap<String, INFOVAR> paras;
 	protected TDS tds; //TDS des variables locaux
 	protected String etiq;
 	
@@ -25,7 +26,7 @@ public class INFOFONC implements INFO{
 		return Rtype;
 	}
 
-	public LinkedHashMap<String, INFO> getParas() {
+	public LinkedHashMap<String, INFOVAR> getParas() {
 		return paras;
 	}
 
@@ -37,12 +38,21 @@ public class INFOFONC implements INFO{
 		return tds;
 	}
 
-	public INFOFONC(String nom, DTYPE type, LinkedHashMap<String,INFO> para, TDS t){
+	public INFOFONC(String nom, DTYPE type, LinkedHashMap<String,INFOVAR> para, TDS t){
 		this.Rtype =type;
 		this.paras = para;
 		this.etiq = nom;
 		this.tds = t;
 	}
+	
+	public int getTailleParas() {
+		int taille = 0;
+		for(Entry<String, INFOVAR> entry : paras.entrySet()) {
+		    taille += entry.getValue().getType().getTaille();
+		}
+		return taille;
+	}
+	
 	public String toString(){
 		return ";FONC: étiquette:"+etiq+" ,type de retour:"+Rtype+" ,paras d'entrée:"+paras+'\n';
 	}
