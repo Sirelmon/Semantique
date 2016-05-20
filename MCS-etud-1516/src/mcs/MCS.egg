@@ -18,24 +18,27 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,RX,AX,FX;
- inh htype: DTYPE for PTRS,DECL,FONCTION,FX;
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,R,RX,
+ A,AX,FX,T,TX;
+ inh htype: DTYPE for PTRS,DECL,FONCTION,RX,TX,FX,AFFX,AX;
  inh hdep : INTEGER for INSTS, INST , CHAMPS;
  syn dep : INTEGER for INST , INSTS;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
- syn para: LinkedHashMap for PARF,PARFS,PARFSX,E,ES,ESX;
+ syn para: LinkedHashMap for PARF,PARFS,PARFSX;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, R, RX,F,FX;
+T, TX, ES, ESX, R, RX,F,FX,AX;
 inh nom : STRING for DECL;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INST,SIX;
-inh info : INFO for FX;
-
+inh info : INFO for F,FX;
+syn op: INTEGER for OPADD,OPMUL,OPREL, OPUN;
+syn paraset: SET for ESX,E,ES;
+inh hparaset: ARRAYLIST for ESX;
 --terminals
 space separateur is  "[\r\n\t ]+";     
 space comm is  "\/\/[^\n]*\n";
@@ -224,8 +227,6 @@ do
     BLOC^infofon := FONCTION^infofon;
 end
 }
-
-
 
 
 -- parametres de fonctions
@@ -430,10 +431,33 @@ end
 }
 
 -- instructions
-INSTS ->   ;
+INSTS ->   #gen;
 INSTS ->  INST INSTS  ;
+
 -- declaration de variable locale avec ou sans init 
-INST ->  TYPE ident AFFX pv ;
+INST ->  TYPE ident #type AFFX pv #tds;
+#type{
+do
+AFFX^htype:= TYPE^type;
+end
+}
+#tds{
+local
+i: INFO;
+iv: INFOVAR;
+
+do
+ i:= INST^tds.ChercherGlobalement(ident^txt);
+ if i /= null then error (B_05,ident^txt);
+ else 
+    iv:= new INFOVAR(ident^txt,TYPE^type);
+    INST^tds.inserer(iv);
+    
+  end
+end
+}
+
+
 -- instruction expression (affectation et appel de procedure)
 INST -> E pv ;
 -- bloc d'instructions
@@ -491,44 +515,251 @@ end
 -- T = expression figurant dans une expression additive (TERME) (+ -)
 -- F = expression figurant dans une expression multiplicative (FACTEUR  (* /))
 -----------------------------------------------------------------------
-E ->   A #type AFFX ;
+E ->   A  #htype AFFX #type;
+#htype{
+local 
+
+do
+AFFX^htype := A^type;
+end
+}
 #type{
 local
+s: SET;
 do
-   
+ if (A^type/= AFFX^type ) then 
+  error (B_08,"mauvais type");
+ end
+ E^type:= A^type;
+ s:= new Set();
+ s.add(AFFX^type);
+ E^paraset:=s;
+
 end
 }
 -- affectation
-AFFX -> affect  A  ;
-AFFX -> ;
+AFFX -> affect  A   #type;
+#type{
+local 
+
+do
+AFFX^type := A^type;
+end
+}
+AFFX -> #type;
+#type{
+local
+
+do
+AFFX^type:=AFFX^htype;
+
+end
+}
 -- relation
-A ->   R AX  ;
-AX -> OPREL R;
-AX ->  ;
+A ->   R #htype AX #type  ;
+
+#htype{ 
+do
+AX^htype := R^type;
+end
+}
+#type{
+local
+do
+ if (R^type/= AX^type ) then 
+  error (B_08,"mauvais type");
+ end
+  A^type:= R^type;
+end
+}
+
+AX -> OPREL R #type;
+#type{
+do
+AX^type:=R^type;
+end
+}
+
+AX ->  #type;
+#type{
+do
+AX^type := AX^htype;
+end
+}
 -- operateurs relationnels
-OPREL -> inf ;
-OPREL -> sup ;
-OPREL -> infeg ;
-OPREL -> supeg ;
-OPREL -> eg ;
-OPREL -> neg ;
-R ->  T  RX ;
+OPREL -> inf #a;
+#a{
+do
+    OPREL^op := 3;
+end
+}
+OPREL -> sup #a;
+#a{
+do
+    OPREL^op := 3;
+end
+}
+OPREL -> infeg #a;
+#a{
+do
+    OPREL^op := 3;
+end
+}
+OPREL -> supeg #a;
+#a{
+do
+    OPREL^op := 3;
+end
+}
+OPREL -> eg #a;
+#a{
+do
+    OPREL^op := 0;
+end
+}
+OPREL -> neg #a;
+#a{
+do
+    OPREL^op := 0;
+end
+}
+R ->  T #a RX #b ;
+#a{
+local
+do
+    RX^htype := T^type;
+end
+}
+
+#b{
+local
+do
+    R^type := RX^type;
+end
+}
+
 -- additions ...
-RX ->   OPADD  T RX  ;
-RX -> ;
+RX ->   OPADD  T #6 RX #7 ;
+#6{
+do
+    if(T^type.getType() /= RX^htype.getType() || ~RX^htype.OpComp(OPADD^op))
+        then error(B_08,T^type);
+    else
+        RX1^htype := RX^htype; 
+    end
+end
+}
+
+#7{
+do
+    RX^type := RX1^type; 
+end
+}
+
+RX -> #5;
+#5{
+do
+    RX^type := RX^htype; 
+end
+}
+
 -- operateurs additifs
-OPADD -> plus ;
-OPADD -> moins ;
-OPADD -> ou ;
+OPADD -> plus #a;
+#a{
+do
+    OPADD^op := 1;
+end
+}
+OPADD -> moins #a;
+#a{
+do
+    OPADD^op := 1;
+end
+}
+OPADD -> ou #a;
+#a{
+do
+    OPADD^op := 1;
+end
+}
 -- multiplication, ...
-T ->  F  TX  ;
-TX ->   OPMUL  F TX  ;
-TX ->  ;
+T -> #info  F #a TX #b ;
+#info{
+do
+ F^info := null;
+end
+}
+#a{
+local
+do
+    TX^htype := F^type;
+end
+}
+
+#b{
+local
+do
+    T^type := TX^type;
+end
+}
+TX ->   OPMUL #info F #6 TX #gen ;
+#info{
+do
+ F^info := null;
+end
+}
+
+#6{
+do
+    if(F^type.getType() /= TX^htype.getType() || ~TX^htype.OpComp(OPMUL^op))
+        then error(B_08,F^type);
+    else
+        TX1^htype := TX^htype; 
+        
+    end
+end
+}
+#gen{
+
+do
+    TX^type := TX1^type; 
+   
+end
+}
+
+TX -> #5 ;
+#5{
+do
+    TX^type := TX^htype; 
+end
+}
+
 -- operateurs multiplicatifs
-OPMUL -> mult ;
-OPMUL -> div ;
-OPMUL -> mod ;
-OPMUL -> et ;
+OPMUL -> mult #a;
+#a{
+do
+    OPMUL^op := 1;
+end
+}
+OPMUL -> div #a;
+#a{
+do
+    OPMUL^op := 1;
+end
+}
+OPMUL -> mod #a;
+#a{
+do
+    OPMUL^op := 1;
+end
+}
+OPMUL -> et #a ;
+
+#a{
+do
+    OPMUL^op := 1;
+end
+}
 -- expressions de base
 -- Constante entiere
 F -> entier   #type;
@@ -560,14 +791,35 @@ end
 F ->  OPUN  F #type ;
 #type{
 do
-F^type := F1^type;
+
+   if ~F1^type.OpComp(OPUN^op) then 
+    error (B_08,F1^type);
+   else
+    F^type := F1^type;
+   end
+
 end
 }
 
 -- operateurs unaires
-OPUN -> plus ;
-OPUN -> moins ;
-OPUN -> non;
+OPUN -> plus #a;
+#a{
+do
+    OPUN^op := 1;
+end
+}
+OPUN -> moins #a ;
+#a{
+do
+    OPUN^op := 1;
+end
+}
+OPUN -> non #a;
+#a{
+do
+    OPUN^op := 1;
+end
+}
 -- pointeur NULL
 F -> null #type ;
 
@@ -581,7 +833,8 @@ F ->  paro E parf #type1 FX #type;
 #type1{
 local
 do
-FX^htype := E^type;
+    FX^htype := E^type;
+
 end
 }
 #type{
@@ -695,17 +948,20 @@ end
 
 -- appel de sous-programme
 FX ->   paro ES parf #gen FX #type;
+
 #gen{
 local
 iff :INFOFONC;
 m : LinkedHashMap;
 do
-    match FX^info with INFOFONC then
+    match FX^info 
+      with INFOFONC then
         iff := FX^info;
         m := iff.getParas();
-        if ~(m.equals(ES^para)) then
+        if ~(iff.mmPara(ES^paraset)) then
             error(B_08,"parametres pas eguaux");
         end
+       else error(b_08,"ce n'est pas une fonction");  
     end
 end
 }
@@ -720,40 +976,53 @@ end
 ES -> #gen;
 #gen{
 local
+    set : ArrayList;
 do
-    ES^para:= new LinkedHashMap();
+    set := new ArrayList();
+    ES^paraset:= set;
 end
 }
 
-ES -> E ESX  #GEN;
-#GEN{
+ES -> E #htype ESX  #paraset;
+#htype {
 local
-m : LinkedHashMap;
+    set : ArrayList;
 do
-    m := new LinkedHashMap();
-    m.putAll(E^para);
-    m.putAll(ESX^para);
-    ES^para:=m;
+    set := new ArrayList();
+    set.add(E^type);
+    ESX^hparaset:= set;
 end
 }
 
-ESX ->  #gen;
-#gen{
+#paraset{
 local
 do
-    ESX^para:= new LinkedHashMap();
+    ES^paraset := ESX^paraset;
 end
 }
 
-ESX -> virg E ESX #GEN;
-#GEN{
+
+ESX ->  #paraset;
+#paraset{
 local
-m : LinkedHashMap;
 do
-    m := new LinkedHashMap();
-    m.putAll(E^para);
-    m.putAll(ESX1^para);
-    ESX^para:=m;
+    ESX^paraset := ESX^hparaset;
+end
+}
+
+ESX -> virg E #htype ESX #paraset;
+
+#htype {
+do
+    E^paraset.add(E^type);
+    ESX1^hparaset:=E^paraset;
+end
+}
+
+
+#paraset{
+do
+    ESX^paraset:=ESX1^paraset;
 end
 }
 
