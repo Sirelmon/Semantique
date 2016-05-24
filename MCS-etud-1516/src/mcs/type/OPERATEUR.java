@@ -29,6 +29,11 @@ public enum OPERATEUR{
 		}
 	}
 	
+	
+	public Collection<String> getAdmis() {
+		return this.typesAdmis;
+	}
+	
 	public OPERATEUR op(int i) {
 		switch (i) {
 		case 0 :

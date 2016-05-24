@@ -13,6 +13,7 @@ inh source : MCSSourceFile for PROGRAMME;
 inh machine : IMachine for 
          ENTITES, ENTITE, DECL, FONCTION, INST, BLOC, INSTS, SIX,
          PARFS, PARF, PARFSX, ES, ESX, 
+         
          E, AFFX, A, AX, R, RX, T, TX, F,FX
 --         -- decommenter la ligne suivante pour MCS
 --       , BASE, DEFS, DEF
@@ -44,9 +45,9 @@ inh nom : STRING for DECL;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
-syn op: INTEGER for OPADD,OPMUL,OPREL, OPUN;
-syn paraset: ARRAYLIST for ESX,E,ES;
-inh hparaset: ARRAYLIST for ESX;
+syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
+syn paraset: ArrayList for ESX,E,ES;
+inh hparaset: ArrayList for ESX;
 --terminals
 space separateur is  "[\r\n\t ]+";     
 space comm is  "\/\/[^\n]*\n";
@@ -191,7 +192,7 @@ local
 iv : INFOVAR;
 do
   if !DECL^est_fonction then
-    iv := new INFOVAR(TYPE^type, ENTITE^hdep);
+    iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
     ENTITE^dep := ENTITE^hdep+1;
     ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv));
   else
@@ -255,7 +256,7 @@ do
     t2 := new TDS(t);
     BLOC^tds := t2;
     
-    FONCTION^infofon.setTDS(t2); 
+    FONCTION^infofon.setTds(t2); 
     
 end
 }
@@ -327,10 +328,10 @@ end
 PARF ->  TYPE ident #gen;
 #gen{
 local
-i:INFOVAR;
+i:INFOTYPE;
 m: LinkedHashMap;
 do
-    i := new INFOVAR(TYPE^type,TYPE^type.getTaille());
+    i := new INFOTYPE(TYPE^type);
     m := new LinkedHashMap();
     m.put(ident^txt,i);
     PARF^para := m;
@@ -523,11 +524,11 @@ i: INFO;
 iv: INFOVAR;
 
 do
- i:= INST^tds.ChercherGlobalement(ident^txt);
+ i:= INST^tds.chercherGlobalement(ident^txt);
  if i /= null then error (B_05,ident^txt);
  else 
-    iv:= new INFOVAR(ident^txt,TYPE^type);
-    INST^tds.inserer(iv);
+    iv:= new INFOVAR(TYPE^type,new Emplacement(INST^hdep,new Register("SB",0)));
+    INST^tds.inserer(ident^txt,iv);
     
     -- A revoir
     INST^code := AFFX^code;
@@ -647,13 +648,13 @@ end
 }
 #type{
 local
-s: SET;
+s: ArrayList;
 do
  if (A^type/= AFFX^type ) then 
   error (B_08,"mauvais type");
  end
  E^type:= A^type;
- s:= new Set();
+ s:= new ArrayList();
  s.add(AFFX^type);
  E^paraset:=s;
  E^code := AFFX^code;
@@ -798,7 +799,7 @@ end
 RX ->   OPADD  T #htype RX #type ;
 #htype{
 do
-    if(T^type.getType() /= RX^htype.getType() || ~RX^htype.OpComp(OPADD^op))
+    if(T^type /= RX^htype || ~RX^htype.OpCompat(OPADD^op))
         then error(B_08,T^type);
     else
         RX1^htype := RX^htype; 
@@ -884,7 +885,7 @@ end
 
 #htype{
 do
-    if(F^type.getType() /= TX^htype.getType() || ~TX^htype.OpComp(OPMUL^op))
+    if(F^type /= TX^htype || ~TX^htype.OpCompat(OPMUL^op))
         then error(B_08,F^type);
     else
         TX1^htype := TX^htype; 
@@ -987,7 +988,7 @@ F ->  OPUN  F #type ;
 #type{
 do
 
-   if ~F1^type.OpComp(OPUN^op) then 
+   if ~F1^type.OpCompat(OPUN^op) then 
     error (B_08,F1^type);
    else
     F^type := F1^type;
@@ -1092,19 +1093,20 @@ do
         error(B_01,ident^txt);
     else
         FX^info := i;
-        FX^htype := i.getType();
-            match i 
+        --FX^htype := i.getType();
+        match i
         with INFOVAR then
             iv := i;
             e := iv.getEmpl();
             t := iv.getType();
+            FX^htype := iv.getType();
             match t
             with STRUCT then
                 FX^hcode := F^machine.genAdr(e.getDep());
                 FX^hcode_est_adresse := false;
             else match t
             with POINTEUR then
-                FX^hcode := F^machine.genReadMem(e.getDep());
+                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
                 FX^hcode_est_adresse := true;
             else
                 error(B_0546125, ident^txt);
@@ -1136,10 +1138,20 @@ end
 
 FX -> #type ;
 #type{
+local 
+i : INFO;
+iv : INFOVAR;
 do
-    FX^type := FX^info.getType();
-    FX^code:=FX^hcode;
-    FX^code_est_adresse := FX^hcode_est_adresse;
+    i := FX^info;
+    match i
+    with INFOVAR then
+        iv := i;
+		FX^type := iv.getType();
+		FX^code:=FX^hcode;
+		FX^code_est_adresse := FX^hcode_est_adresse;
+    else
+        error(B_10,"fonction");
+    end
 end
 }
 
@@ -1153,29 +1165,37 @@ local
  tident: DTYPE;
  c : CHAMP;
  lc : LCHAMPS;
+ i : INFO;
+ iv : INFOVAR;
 do
-    t := FX^info.getType(); 
-  match t
-  with STRUCT then
-    s := t;
-    lc := s.getChamps();
-    c := lc.chercher(ident^txt);
-    if c = nil then
-      error(B_10, ident^txt) ;
-    else
-      FX1^htype := c.getType();
-    tident := c.getType();
-    if (FX^hcode_est_adresse) then
-        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()); 
-    else
-        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+    i := FX^info;
+    match i
+    with INFOVAR then
+        iv := i;
+        t := iv.getType();
+        match t
+		  with STRUCT then
+		    s := t;
+		    lc := s.getChamps();
+		    c := lc.chercher(ident^txt);
+		    if c = nil then
+		      error(B_10, ident^txt) ;
+		    else
+		      FX1^htype := c.getType();
+		    tident := c.getType();
+		    if (FX^hcode_est_adresse) then
+		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()); 
+		    else
+		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+		    end
+		    
+		    end    
+		  else
+		    error(B_09, "t"); 
+		  end
+     else
+        error(B_10,"fonction");
     end
-    
-    end    
-  else
-    error(B_09, t); 
-  end
-
 end
 }
 
@@ -1198,30 +1218,39 @@ code : STRING;
 lc : LCHAMPS;
 s : STRUCT ;
 c : CHAMP;
+i : INFO;
+iv : INFOVAR;
 do
-    t := FX^info.getType();
-    match t
-    with POINTEUR then
-        p := t;
-        FX1^htype := p.getType();
-        tp := p.getType();
-        match tp with STRUCT then 
-            s := tp;
-            lc := s.getChamps();
-            c := lc.chercher(ident^txt);
-            if c = nil then
-                error(B_10, ident^txt) ;
-            else
-                FX1^htype := c.getType();
-                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
-            end
-        else
-            error(B_45, ident^txt);
-        end
-    
+    i := FX^info;
+    match i 
+    with INFOVAR then
+        iv := i;
+        t := iv.getType();
+	    match t
+	    with POINTEUR then
+	        p := t;
+	        tp := p.getTypeP();
+            FX1^htype := tp;
+	        match tp with STRUCT then 
+	            s := tp;
+	            lc := s.getChamps();
+	            c := lc.chercher(ident^txt);
+	            if c = nil then
+	                error(B_10, ident^txt) ;
+	            else
+	                FX1^htype := c.getType();
+	                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+	            end
+	        else
+	            error(B_45, ident^txt);
+	        end
+	    
+	    else
+	        error(B_11, FX^htype);
+	    end
     else
-        error(B_11, FX^htype);
-    end
+        error(B_10,"fonction");
+    end       
 end
 }
 

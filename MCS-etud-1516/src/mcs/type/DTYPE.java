@@ -1,5 +1,7 @@
 package mcs.type;
 
+import java.util.Collection;
+
 public class DTYPE {
 	// inutilisable avec EGG
 	// final private DTYPE entier = new DTYPE("entier",4);
@@ -31,12 +33,13 @@ public class DTYPE {
 		return nom + "(" + taille + ")";
 	}
 	
-	public boolean OpCompat(int op){
-		return ( op == 1 && this.getNom().equals("entier"))
-			|| ( op == 3 && (this.getNom().equals("entier") || 
-							 this.getNom().equals("char") || 
-							 this.getNom().equals("string"))
-			|| ( op == 0));
-		 
+	public boolean OpCompat(OPERATEUR op){
+		Collection<String> typeAdmis = op.getAdmis();
+		for (String type :  typeAdmis) {
+			if (type.equals(this.getNom())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

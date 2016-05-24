@@ -39,6 +39,10 @@ public class INFOFONC implements INFO{
 		return tds;
 	}
 
+	public void setTds(TDS t) {
+		this.tds = t;
+	}
+	
 	public INFOFONC(String nom, DTYPE type, LinkedHashMap<String,INFOVAR> para, TDS t){
 		this.Rtype =type;
 		this.paras = para;
