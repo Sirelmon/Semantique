@@ -1,3 +1,5 @@
 ; Generated code for tests/test_a_nous.mcs.
 ; Do not modify by hand
-; no code
+_main:
+	PUSH 1
+nullnull	RETURN (1) 0

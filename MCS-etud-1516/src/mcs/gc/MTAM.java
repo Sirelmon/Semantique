@@ -77,8 +77,8 @@ public class MTAM extends AbstractMachine {
 		}
 	}
 
-	public String genPush(INFOVAR i) {
-		int taille = i.getType().getTaille();
+	public String genPush(DTYPE type) {
+		int taille = type.getTaille();
 		return "\tPUSH " + taille + "\n";
 	}
 	
@@ -139,71 +139,94 @@ public class MTAM extends AbstractMachine {
 	
 	public String genSubr(OPERATEUR op, DTYPE type) {
 		if (type.getNom().equals("int")) {
-			switch (op)
+			switch (op.getNum())
 			{
-				case OPB_inf :
+				// OPB_inf
+				case 0 :
 					return "\tSUBR ILss\n";
-				case OPB_sup :
+				// OPB_sup 
+				case 1 :
 					return "\tSUBR IGtr\n";
-				case OPB_infeg :
+				// OPB_infeg
+				case 2 :
 					return "\tSUBR ILeq\n";
-				case OPB_supeg :
+				// OPB_supeg 
+				case 3 :
 					return "\tSUBR IGeq\n";
-				case OPB_eg :
+				// OPB_eg
+				case 4 :
 					return "\tSUBR IEq\n";
-				case OPB_neg :
+				// OPB_neg 
+				case 5 :
 					return "\tSUBR INeq\n";
-				case OPB_plus :
+				// OPB_plus 
+				case 6 :
 					return "\tSUBR IAdd\n";
-				case OPB_moins :
+				// OPB_moins
+				case 7 :
 					return "\tSUBR ISub\n";
-				case OPB_ou :
+				// OPB_ou
+				case 8 :
 					return "\tSUBR BOr\n";
-				case OPB_mult :
+				// OPB_mult
+				case 9 :
 					return "\tSUBR IMul\n";
-				case OPB_div :
+				// OPB_div
+				case 10 :
 					return "\tSUBR IDiv\n";
-				case OPB_mod :
+				// OPB_mod
+				case 11 :
 					return "\tSUBR IMod\n";
-				case OPB_et :
+				// OPB_et
+				case 12 :
 					return "\tSUBR BAnd\n";
-				case OPU_plus :
+				// OPU_plus
+				case 13 :
 					return "";
-				case OPU_moins :
+				// OPU_moins
+				case 14 :
 					return "\tSUBR INeg\n";
-				case OPU_non :
+				// OPU_non
+				case 15 :
 					return "\tSUBR BNeg\n";
 				default :
 					return "";
 			}
 		} else if (type.getNom().equals("char")) {
-			switch (op)
+			switch (op.getNum())
 			{
-				case OPB_eg :
+				// OPB_eg
+				case 4 :
 					return "\tSUBR IEg\n";
-				case OPB_neg :
+				// OPB_neg
+				case 5 :
 					return "\tSUBR INeq\n";
-				case OPB_plus :
+				// OPB_plus
+				case 6 :
 					return "\tSUBR SConcat\n";
 				default :
 					return "";
 			}
 		} else if (type.getNom().equals("string")) {
-			switch (op)
+			switch (op.getNum())
 			{
-				case OPB_plus :
+				// OPB_plus
+				case 6 :
 					return "\tSUBR SConcat\n";
 				default :
 					return "";
 			}
 		} else if (type.getNom().equals("bool")) {
-			switch (op)
+			switch (op.getNum())
 			{
-				case OPB_ou :
+				// OPB_ou
+				case 8 :
 					return "\tSUBR BOr\n";
-				case OPB_et :
+				// OPB_et
+				case 12 :
 					return "\tSUBR BAnd\n";
-				case OPU_non :
+				// OPU_non
+				case 15 :
 					return "\tSUBR BNeg\n";
 				default :
 					return "";

@@ -41,7 +41,7 @@ inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
 T, TX, ES, ESX, RX,F,FX,AX;
-inh nom : STRING for DECL;
+inh nom : STRING for DECL, AFFX;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
@@ -167,7 +167,7 @@ local
 do
     i := ENTITE^tds.chercherGlobalement(identc^txt);
     if i /= nil then
-       error(B_00, identc^txt);
+       error(B_00, " 170");
     else    
       -- creer un type
      i := new INFOTYPE(TYPE^type);
@@ -194,7 +194,7 @@ do
   if !DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
     ENTITE^dep := ENTITE^hdep+1;
-    ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv));
+    ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
   else
     ENTITE^code := DECL^code;
   end
@@ -209,7 +209,7 @@ it:INFOTYPE;
 do
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
-      error(B_01, DECL^nom);
+      error(B_01, " 212");
     else
        i:=new INFOTYPE(DECL^htype);
        call DECL^tds.inserer(DECL^nom, i);
@@ -228,7 +228,7 @@ do
     m := new LinkedHashMap();
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
-      error(B_01, DECL^nom);
+      error(B_02, " 231");
     else
        FONCTION^htype := DECL^htype;
        call DECL^tds.inserer(DECL^nom, i);
@@ -412,14 +412,14 @@ STYPE -> identc #type;
     -- rechercher l'ident   
     i := STYPE^tds.chercherGlobalement(identc^txt);
     if i = null then
-      error(B_01, identc^txt);
+      error(B_03, " 415");
     else
        match i
        with INFOTYPE then
          it := i ;
          STYPE^type :=  it.getType();
        else
-          error(B_07, identc^txt);
+          error(B_04, " 422");
        end
     end
   end
@@ -452,7 +452,7 @@ CHAMPS -> CHAMP #ch CHAMPS ;
  do
   c := CHAMPS^champs.chercher(CHAMP^hnom);
     if c /= nil then
-       error(B_00, CHAMP^hnom);
+       error(B_05, " 455");
     else    
       c := new CHAMP(CHAMP^hnom, CHAMP^type, CHAMPS^hdep);
      call CHAMPS^champs.inserer(c);
@@ -515,7 +515,8 @@ INST ->  TYPE ident #type AFFX pv #tds;
 #type{
 do
 AFFX^htype:= TYPE^type;
-AFFX^hcode := "";
+AFFX^hcode := INST^machine.genPush(TYPE^type);
+AFFX^nom := ident^txt;
 end
 }
 #tds{
@@ -525,12 +526,11 @@ iv: INFOVAR;
 
 do
  i:= INST^tds.chercherGlobalement(ident^txt);
- if i /= null then error (B_05,ident^txt);
+ if i /= null then error (B_06, " 528");
  else 
     iv:= new INFOVAR(TYPE^type,new Emplacement(INST^hdep,new Register("SB",0)));
     INST^tds.inserer(ident^txt,iv);
     
-    -- A revoir
     INST^code := AFFX^code;
     
     INST^dep := INST^hdep + TYPE^type.getTaille();
@@ -615,7 +615,7 @@ t: DTYPE;
 do
     t := INST^infofon.getRtype();
     if ~(t.compareTo(E^type)) then 
-         error(B_05, "mauvais type de retour"+ INST^infofon.getEtiq());
+         error(B_07, " 618" + " mauvais type de retour"+ INST^infofon.getEtiq());
        end
 end
 }
@@ -644,14 +644,15 @@ local
 do
 AFFX^htype := A^type;
 AFFX^hcode := A^code;
+AFFX^nom := "";
 end
 }
 #type{
 local
 s: ArrayList;
 do
- if (A^type/= AFFX^type ) then 
-  error (B_08,"mauvais type");
+ if ~(A^type.compareTo(AFFX^type)) then 
+  error (B_08, " 654" + " mauvais type " + A^type.getNom() + " " + AFFX^type.getNom());
  end
  E^type:= A^type;
  s:= new ArrayList();
@@ -665,10 +666,24 @@ end
 AFFX -> affect  A   #type;
 #type{
 local 
-
+i : INFO;
+iv : INFOVAR;
+e : Emplacement;
 do
   AFFX^type := A^type;
-  AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
+  i := AFFX^tds.chercherGlobalement(AFFX^nom);
+  if (i/= nil) then
+	  match i
+	  with INFOVAR then
+	    iv := i;
+        e := iv.getEmpl();
+	    AFFX^code :=  AFFX^hcode + A^code + AFFX^machine.genWriteMem(e.getDep(),A^type.getTaille());
+      else
+        error (B_new, " 682");
+      end
+  else
+    error(B_new2, " 685");
+  end
 end
 }
 AFFX -> #type;
@@ -694,7 +709,7 @@ end
 local
 do
  if (R^type/= AX^type ) then 
-  error (B_08,"mauvais type");
+  error (B_09," 697" +" mauvais type");
  end
   A^type:= R^type;
   A^code := AX^code;
@@ -723,8 +738,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(0);
+    o := new OPERATEUR(0);
+    OPREL^op := o;
 end
 }
 OPREL -> sup #a;
@@ -733,8 +748,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(1);
+    o := new OPERATEUR(1);
+    OPREL^op := o;
 end
 }
 OPREL -> infeg #a;
@@ -743,8 +758,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(2);
+    o := new OPERATEUR(2);
+    OPREL^op := o;
 end
 }
 OPREL -> supeg #a;
@@ -753,8 +768,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(3);
+    o := new OPERATEUR(3);
+    OPREL^op := o;
 end
 }
 OPREL -> eg #a;
@@ -763,8 +778,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(4);
+    o := new OPERATEUR(4);
+    OPREL^op := o;
 end
 }
 OPREL -> neg #a;
@@ -773,8 +788,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPREL^op := o.op(5);
+    o := new OPERATEUR(5);
+    OPREL^op := o;
 end
 }
 R ->  T #htype RX #type ;
@@ -800,7 +815,7 @@ RX ->   OPADD  T #htype RX #type ;
 #htype{
 do
     if(T^type /= RX^htype || ~RX^htype.OpCompat(OPADD^op))
-        then error(B_08,T^type);
+        then error(B_10, " 803");
     else
         RX1^htype := RX^htype; 
         RX1^hcode := RX^hcode + T^code + RX^machine.genSubr(OPADD^op, T^type);
@@ -830,8 +845,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPADD^op := o.op(6);
+    o := new OPERATEUR(6);
+    OPADD^op := o;
 end
 }
 OPADD -> moins #a;
@@ -840,8 +855,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPADD^op := o.op(7);
+    o := new OPERATEUR(7);
+    OPADD^op := o;
 end
 }
 OPADD -> ou #a;
@@ -850,8 +865,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPADD^op := o.op(8);
+    o := new OPERATEUR(8);
+    OPADD^op := o;
 end
 }
 -- multiplication, ...
@@ -886,7 +901,7 @@ end
 #htype{
 do
     if(F^type /= TX^htype || ~TX^htype.OpCompat(OPMUL^op))
-        then error(B_08,F^type);
+        then error(B_11," 889");
     else
         TX1^htype := TX^htype; 
         TX1^hcode := TX^hcode + F^code + TX^machine.genSubr(OPMUL^op, F^type);
@@ -918,8 +933,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPMUL^op := o.op(9);
+    o := new OPERATEUR(9);
+    OPMUL^op := o;
 end
 }
 OPMUL -> div #a;
@@ -928,8 +943,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPMUL^op := o.op(10);
+    o := new OPERATEUR(10);
+    OPMUL^op := o;
 end
 }
 OPMUL -> mod #a;
@@ -938,8 +953,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPMUL^op := o.op(11);
+    o := new OPERATEUR(11);
+    OPMUL^op := o;
 end
 }
 OPMUL -> et #a ;
@@ -948,8 +963,8 @@ local
 o : OPERATEUR;
 
 do
-    o := new OPERATEUR();
-    OPMUL^op := o.op(12);
+    o := new OPERATEUR(12);
+    OPMUL^op := o;
 end
 }
 -- expressions de base
@@ -989,7 +1004,7 @@ F ->  OPUN  F #type ;
 do
 
    if ~F1^type.OpCompat(OPUN^op) then 
-    error (B_08,F1^type);
+    error (B_12," 992");
    else
     F^type := F1^type;
     F^code := F1^code + F^machine.genSubr(OPUN^op, F1^type);
@@ -1002,20 +1017,32 @@ end
 -- operateurs unaires
 OPUN -> plus #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPUN^op := 1;
+    o := new OPERATEUR(13);
+    OPUN^op := o;
 end
 }
 OPUN -> moins #a ;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPUN^op := 1;
+    o := new OPERATEUR(14);
+    OPUN^op := o;
 end
 }
 OPUN -> non #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPUN^op := 1;
+    o := new OPERATEUR(15);
+    OPUN^op := o;
 end
 }
 -- pointeur NULL
@@ -1072,7 +1099,7 @@ do
             F^code_est_adresse := false;
         end
     else
-        error(B_3245674, F1^type.toString());
+        error(B_13, " 1087");
     end
     F^type := F1^type;
     F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
@@ -1090,7 +1117,7 @@ e : Emplacement;
 do
     i := F^tds.chercherGlobalement(ident^txt);
     if i = nil then
-        error(B_01,ident^txt);
+        error(B_14," 1105");
     else
         FX^info := i;
         --FX^htype := i.getType();
@@ -1109,7 +1136,8 @@ do
                 FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
                 FX^hcode_est_adresse := true;
             else
-                error(B_0546125, ident^txt);
+                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                FX^hcode_est_adresse := false;
             end
             
            end 
@@ -1121,7 +1149,7 @@ do
             FX^hcode_est_adresse := false;
     else
             
-        error(B_02145, ident^txt);
+        error(B_16, " 1136");
     end
     end
     end
@@ -1150,7 +1178,7 @@ do
 		FX^code:=FX^hcode;
 		FX^code_est_adresse := FX^hcode_est_adresse;
     else
-        error(B_10,"fonction");
+        error(B_17," 1165");
     end
 end
 }
@@ -1179,7 +1207,7 @@ do
 		    lc := s.getChamps();
 		    c := lc.chercher(ident^txt);
 		    if c = nil then
-		      error(B_10, ident^txt) ;
+		      error(B_18, " 1194") ;
 		    else
 		      FX1^htype := c.getType();
 		    tident := c.getType();
@@ -1191,10 +1219,10 @@ do
 		    
 		    end    
 		  else
-		    error(B_09, "t"); 
+		    error(B_19, " 1206"); 
 		  end
      else
-        error(B_10,"fonction");
+        error(B_20," 1209");
     end
 end
 }
@@ -1236,20 +1264,20 @@ do
 	            lc := s.getChamps();
 	            c := lc.chercher(ident^txt);
 	            if c = nil then
-	                error(B_10, ident^txt) ;
+	                error(B_21, " 1251") ;
 	            else
 	                FX1^htype := c.getType();
 	                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
 	            end
 	        else
-	            error(B_45, ident^txt);
+	            error(B_22, " 1257");
 	        end
 	    
 	    else
-	        error(B_11, FX^htype);
+	        error(B_23, " 1261");
 	    end
     else
-        error(B_10,"fonction");
+        error(B_24," 1264");
     end       
 end
 }
@@ -1276,10 +1304,10 @@ do
         iff := FX^info;
 
         if ~(iff.mmPara(ES^paraset)) then
-            error(B_08,"parametres pas eguaux");
+            error(B_24," 1291" + " parametres pas egaux");
         end
         FX1^hcode := ES^code + FX^hcode;
-      else error(b_08,"ce n'est pas une fonction");  
+      else error(B_25," 1294" + "ce n'est pas une fonction");  
     end
 end
 }

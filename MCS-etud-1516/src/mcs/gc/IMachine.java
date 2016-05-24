@@ -34,7 +34,7 @@ public interface IMachine {
 
 	String genSubr(OPERATEUR att_op, DTYPE att_type);
 
-	String genPush(INFOVAR loc_iv);
+	String genPush(DTYPE type);
 
 	String genDecl(String att_txt, INFOVAR loc_iv, String genPush);
 
@@ -55,6 +55,8 @@ public interface IMachine {
 	String genAdrField(int dep);
 
 	String genIf(String att_code, String att_code2, String att_code3);
+
+	String genWriteMem(int dep, int taille);
 	
 	
 	
