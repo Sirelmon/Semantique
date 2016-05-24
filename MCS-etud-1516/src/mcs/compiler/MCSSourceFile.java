@@ -73,7 +73,7 @@ public class MCSSourceFile extends SourceUnit {
 		// System.err.println("mach " + mach);
 		machName = mach;
 		if ("tam".equals(mach)) {
-			machine = new MTAM();
+			machine = new MTAM("tam"); ////////////////////////////////////////////////////////////////////////////////////////////
 		} else {
 			// TODO si la machine n'est pas tam
 			// machine = new ???();

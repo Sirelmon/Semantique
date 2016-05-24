@@ -1,17 +1,18 @@
 package mcs.egg;
+import mcs.compiler.*;
 import mcs.tds.*;
 import mcs.type.*;
-import java.util.*;
 import mcs.gc.*;
+import java.util.*;
 import mg.egg.eggc.runtime.libjava.*;
 import mg.egg.eggc.runtime.libjava.lex.*;
-public class T_ASM {
-  LEX_ASM att_scanner;
+public class T_MCS {
+  LEX_MCS att_scanner;
   String att_txt;
-  LEX_ASM scanner;
+  LEX_MCS scanner;
   private String txt;
   public String getTxt(){return txt;}
-  public T_ASM(LEX_ASM scanner ) {
+  public T_MCS(LEX_MCS scanner ) {
     this.scanner = scanner ;
     this.att_scanner = scanner ;
     }

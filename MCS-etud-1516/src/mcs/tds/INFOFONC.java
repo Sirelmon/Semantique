@@ -1,9 +1,10 @@
 package mcs.tds;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import mcs.gc.Emplacement;
 import mcs.type.DTYPE;
 
 /**
@@ -56,4 +57,17 @@ public class INFOFONC implements INFO{
 	public String toString(){
 		return ";FONC: étiquette:"+etiq+" ,type de retour:"+Rtype+" ,paras d'entrée:"+paras+'\n';
 	}
+	
+	public boolean mmPara(ArrayList list){
+		
+		Collection<INFOVAR> col = this.getParas().values();
+		int i =0;
+		boolean result= true; 
+		for ( INFOVAR in: col){
+			result = result & (in.getType().compareTo( (DTYPE) list.get(i)));
+			i++;
+		}
+		return result;
+	} 
+	
 }

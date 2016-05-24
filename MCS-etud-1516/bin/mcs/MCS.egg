@@ -18,7 +18,7 @@ inh machine : IMachine for
 --       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
- syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RT,R,RX,
+ syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RX,
  A,AX,FX,T,TX;
  inh htype: DTYPE for PTRS,DECL,FONCTION,RX,TX,FX,AFFX,AX;
  syn code : STRING for 
@@ -39,13 +39,13 @@ syn code_asm : STRING for ASM;
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, R, RX,F,FX,AX;
+T, TX, ES, ESX, RX,F,FX,AX;
 inh nom : STRING for DECL;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
 syn op: INTEGER for OPADD,OPMUL,OPREL, OPUN;
-syn paraset: SET for ESX,E,ES;
+syn paraset: ARRAYLIST for ESX,E,ES;
 inh hparaset: ARRAYLIST for ESX;
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -132,7 +132,7 @@ end
 #gen {
 local
 do
-   machine.writeCode(PROGRAMME^source.getFileName(),"; no code\n");  
+   machine.writeCode(PROGRAMME^source.getFileName(),ENTITES^code);  
 end
 }
 ENTITES -> #dep ;
@@ -718,38 +718,62 @@ end
 -- operateurs relationnels
 OPREL -> inf #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 3;
+    o := new OPERATEUR();
+    OPREL^op := o.op(0);
 end
 }
 OPREL -> sup #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 3;
+    o := new OPERATEUR();
+    OPREL^op := o.op(1);
 end
 }
 OPREL -> infeg #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 3;
+    o := new OPERATEUR();
+    OPREL^op := o.op(2);
 end
 }
 OPREL -> supeg #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 3;
+    o := new OPERATEUR();
+    OPREL^op := o.op(3);
 end
 }
 OPREL -> eg #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 0;
+    o := new OPERATEUR();
+    OPREL^op := o.op(4);
 end
 }
 OPREL -> neg #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPREL^op := 0;
+    o := new OPERATEUR();
+    OPREL^op := o.op(5);
 end
 }
 R ->  T #htype RX #type ;
@@ -801,20 +825,32 @@ end
 -- operateurs additifs
 OPADD -> plus #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPADD^op := 1;
+    o := new OPERATEUR();
+    OPADD^op := o.op(6);
 end
 }
 OPADD -> moins #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPADD^op := 1;
+    o := new OPERATEUR();
+    OPADD^op := o.op(7);
 end
 }
 OPADD -> ou #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPADD^op := 1;
+    o := new OPERATEUR();
+    OPADD^op := o.op(8);
 end
 }
 -- multiplication, ...
@@ -877,27 +913,42 @@ end
 -- operateurs multiplicatifs
 OPMUL -> mult #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPMUL^op := 1;
+    o := new OPERATEUR();
+    OPMUL^op := o.op(9);
 end
 }
 OPMUL -> div #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPMUL^op := 1;
+    o := new OPERATEUR();
+    OPMUL^op := o.op(10);
 end
 }
 OPMUL -> mod #a;
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPMUL^op := 1;
+    o := new OPERATEUR();
+    OPMUL^op := o.op(11);
 end
 }
 OPMUL -> et #a ;
-
 #a{
+local
+o : OPERATEUR;
+
 do
-    OPMUL^op := 1;
+    o := new OPERATEUR();
+    OPMUL^op := o.op(12);
 end
 }
 -- expressions de base
@@ -1189,12 +1240,12 @@ FX ->   paro ES parf #htype FX #type;
 #htype{
 local
 iff :INFOFONC;
-m : LinkedHashMap;
+
 do
     match FX^info 
       with INFOFONC then
         iff := FX^info;
-        m := iff.getParas();
+
         if ~(iff.mmPara(ES^paraset)) then
             error(B_08,"parametres pas eguaux");
         end
