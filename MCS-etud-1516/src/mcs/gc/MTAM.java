@@ -39,7 +39,7 @@ public class MTAM extends AbstractMachine {
 	}
 
 	public String genCall(String etiquette) {
-		return "; Appel a " + etiquette + "\n" + "\tCALL(SB) _" + etiquette
+		return "; Appel a " + etiquette + "\n" + "\tCALL(SB) " + etiquette
 				+ "\n";
 	}
 

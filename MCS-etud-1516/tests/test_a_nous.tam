@@ -1,5 +1,13 @@
 ; Generated code for tests/test_a_nous.mcs.
 ; Do not modify by hand
+; Appel a _main
+	CALL(SB) _main
 _main:
 	PUSH 1
-nullnull	RETURN (1) 0
+	PUSH 1
+	LOADL 2
+	STORE(1) 5[LB]
+	LOAD(1) 4[LB]
+	LOAD(1) 5[LB]
+	STORE(1) 4[LB]
+	RETURN (1) 0
