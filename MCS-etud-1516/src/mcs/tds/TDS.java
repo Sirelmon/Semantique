@@ -73,6 +73,16 @@ public class TDS extends HashMap<String, INFO> {
 	public void inserer(String n, INFO i) {
 		put(n, i);
 	}
+	
+	public int getTailleLocales() {
+		int somme = 0;
+		for (INFO i : this.values()) {
+			if (i instanceof INFOVAR) {
+			somme += ((INFOVAR) i).getType().getTaille();
+			}
+		}
+		return somme;
+	}
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();

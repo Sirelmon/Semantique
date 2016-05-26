@@ -57,6 +57,12 @@ public interface IMachine {
 	String genIf(String att_code, String att_code2, String att_code3);
 
 	String genWriteMem(int dep, int taille);
+
+	String genFin();
+
+	String genComment(String string);
+
+	String genFree(int tailleLocales);
 	
 	
 	

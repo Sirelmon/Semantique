@@ -32,6 +32,7 @@ inh machine : IMachine for
  inh hcode_est_adresse : BOOLEAN for FX;
  syn adresse : Emplacement for A,AX,R,RX,T,TX,F,FX;
  inh hadresse : Emplacement for AFFX,AX,RX,TX,FX;
+ inh gauche_affect : BOOLEAN for E, AFFX,A,AX,R,RX,T,TX,F,FX;
  inh hdep : INTEGER for ENTITES, ENTITE, BLOC, INSTS, INST , SIX, CHAMPS;
  syn dep : INTEGER for ENTITES, ENTITE, BLOC, INST , INSTS, SIX;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
@@ -128,7 +129,7 @@ do
      ENTITES^machine := machine;
      ENTITES^tds:= new TDS();
      ENTITES^hdep:=3;
-     ENTITES^hcode := machine.genCall("_main");
+     ENTITES^hcode := machine.genCall("_main") + machine.genFin();
    end
 end
 }
@@ -272,7 +273,7 @@ do
     m:=FONCTION^infofon.getParas();
     m.putAll(PARFS^para);
     BLOC^infofon := FONCTION^infofon;
-    BLOC^hdep := 4;
+    BLOC^hdep := 3;
 end
 }
 
@@ -385,7 +386,7 @@ end
 STYPE-> void #type ;
 #type {
 do
-    STYPE^type := new DTYPE("void", 1);
+    STYPE^type := new DTYPE("void", 0);
     -- il faut encore définir la bonne taille
 end
 }
@@ -486,7 +487,7 @@ end
 
 #gen {
 do
-    BLOC^code := INSTS^code;
+    BLOC^code := INSTS^code+BLOC^machine.genFree(t.getTailleLocales());
     BLOC^dep := INSTS^dep;
 end
 }
@@ -520,6 +521,7 @@ do
 AFFX^htype:= TYPE^type;
 AFFX^hcode := INST^machine.genPush(TYPE^type);
 AFFX^nom := ident^txt;
+AFFX^gauche_affect := false;
 end
 }
 #tds{
@@ -548,7 +550,12 @@ end
 
 
 -- instruction expression (affectation et appel de procedure)
-INST -> E pv #code ;
+INST -> #affect E pv #code ;
+#affect{
+do
+    E^gauche_affect := true;
+end
+}
 
 #code {
 do
@@ -574,19 +581,24 @@ do
 end
 }
 -- conditionnelle
-INST ->   si paro E parf #tds BLOC SIX #code ;
-#tds{
-local
-t :TDS;
+INST ->   si paro #affect E parf #tds BLOC SIX #code ;
+global
+tds : TDS; 
+#affect{
 do
-    t := new TDS(INST^tds);
-    BLOC^tds := t;
+    E^gauche_affect := false;
+end
+}
+#tds{
+do
+    tds := new TDS(INST^tds);
+    BLOC^tds := tds;
 end
 }
 
 #code {
+local
 do
-  
   INST^code := INST^machine.genIf(E^code, BLOC^code, SIX^code);
   INST^dep := BLOC^dep;
 end
@@ -615,7 +627,12 @@ do
 end
 }
 -- retour de fonction
-INST ->  retour  E #type pv #code ;
+INST ->  retour  #affect E #type pv #code ;
+#affect{
+do
+    E^gauche_affect := false;
+end
+}
 
 #type{
 local
@@ -645,7 +662,7 @@ end
 -- T = expression figurant dans une expression additive (TERME) (+ -)
 -- F = expression figurant dans une expression multiplicative (FACTEUR  (* /))
 -----------------------------------------------------------------------
-E -> A  #htype AFFX #type;
+E ->  A  #htype AFFX #type;
 #htype{
 local 
 
@@ -654,6 +671,7 @@ AFFX^htype := A^type;
 AFFX^hcode := A^code;
 AFFX^nom := "";
 AFFX^hadresse := A^adresse;
+AFFX^gauche_affect := false;
 end
 }
 #type{
@@ -674,14 +692,11 @@ end
 -- affectation
 AFFX -> affect  A   #type;
 #type{
-local 
-i : INFO;
-iv : INFOVAR;
-e : Emplacement;
 do
   AFFX^type := A^type;
   if (AFFX^hadresse /= nil) then
-    AFFX^code :=  AFFX^hcode + A^code + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
+    AFFX^code :=  AFFX^hcode + A^code
+                  + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
   else
     error (B_new, " 682");
   end
@@ -710,10 +725,7 @@ end
 #type{
 local
 do
- if (R^type/= AX^type ) then 
-  error (B_09," 697" +" mauvais type");
- end
-  A^type:= R^type;
+  A^type:= AX^type;
   A^code := AX^code;
   A^adresse := AX^adresse;
 end
@@ -722,9 +734,13 @@ end
 AX -> OPREL R #type;
 #type{
 do
-  AX^type:=R^type;
+ if ~(R^type.compareTo(AX^htype) ) then 
+  error (B_09," 697" +" mauvais type");
+ else
+  AX^type:=new DTYPE("int", 1);
   AX^code := AX^hcode + R^code + AX^machine.genSubr(OPREL^op, R^type);
   AX^adresse := nil;
+ end
 end
 }
 
@@ -820,7 +836,7 @@ end
 RX ->   OPADD  T #htype RX #type ;
 #htype{
 do
-    if(T^type /= RX^htype || ~RX^htype.OpCompat(OPADD^op))
+    if(~T^type.compareTo(RX^htype) || ~RX^htype.OpCompat(OPADD^op))
         then error(B_10, " 803");
     else
         RX1^htype := RX^htype; 
@@ -911,7 +927,7 @@ end
 
 #htype{
 do
-    if(F^type /= TX^htype || ~TX^htype.OpCompat(OPMUL^op))
+    if(~F^type.compareTo(TX^htype) || ~TX^htype.OpCompat(OPMUL^op))
         then error(B_11," 889");
     else
         TX1^htype := TX^htype; 
@@ -1162,7 +1178,11 @@ do
                 FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
                 FX^hcode_est_adresse := true;
             else
-                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                if F^gauche_affect then
+                    FX^hcode := F^machine.genComment("gauche_affect");
+                else
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                end
                 FX^hcode_est_adresse := false;
             end
             
@@ -1367,7 +1387,12 @@ do
 end
 }
 
-ES -> E #htype ESX  #paraset;
+ES -> #affect E #htype ESX  #paraset;
+#affect{
+do
+    E^gauche_affect := false;
+end
+}
 #htype {
 local
     set : ArrayList;
@@ -1397,8 +1422,12 @@ do
 end
 }
 
-ESX -> virg E #htype ESX #paraset;
-
+ESX -> virg #affect E #htype ESX #paraset;
+#affect{
+do
+    E^gauche_affect := false;
+end
+}
 #htype {
 do
     E^paraset.add(E^type);
