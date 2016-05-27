@@ -63,6 +63,8 @@ public interface IMachine {
 	String genComment(String string);
 
 	String genFree(int tailleLocales);
+
+	String genMalloc(int taille);
 	
 	
 	

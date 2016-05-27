@@ -517,9 +517,21 @@ end
 -- declaration de variable locale avec ou sans init 
 INST ->  TYPE ident #type #tds AFFX pv #code;
 #type{
+local
+t : DTYPE;
+tp : DTYPE;
+p : POINTEUR;
 do
-AFFX^htype:= TYPE^type;
-AFFX^hcode := INST^machine.genPush(TYPE^type);
+t := TYPE^type;
+AFFX^htype:= t;
+match t
+with POINTEUR then
+    p := t;
+    tp := p.getTypeP();
+    AFFX^hcode := INST^machine.genMalloc(tp.getTaille());
+else
+    AFFX^hcode := INST^machine.genPush(TYPE^type);
+end
 AFFX^nom := ident^txt;
 AFFX^gauche_affect := false;
 end
@@ -698,7 +710,7 @@ do
     AFFX^code :=  AFFX^hcode + A^code
                   + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
   else
-    error (B_new, " 682");
+    AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
   end
 end
 }
@@ -1101,7 +1113,7 @@ end
 }
 #type{
 do
-    F^type:= E^type;
+    F^type:= FX^type;
     F^code := FX^code;
     F^code_est_adresse := FX^code_est_adresse;
     F^adresse := nil;
@@ -1138,10 +1150,10 @@ do
     else
         error(B_13, " 1087");
     end
-    if F1^adresse = nil then
-        F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+    if F^gauche_affect then
+        F^code := F1^code;
     else
-        F^code := F1^code + F^machine.genReadMem(F1^adresse.getDep(),F1^type.getTaille());
+        F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
     end
     F^adresse := nil;
 end
@@ -1171,7 +1183,11 @@ do
             FX^htype := iv.getType();
             match t
             with STRUCT then
-                FX^hcode := F^machine.genAdr(e.getDep());
+                if ~F^gauche_affect then
+                    FX^hcode := F^machine.genAdr(e.getDep());
+                else
+                    FX^hcode := "";
+                end
                 FX^hcode_est_adresse := false;
             else match t
             with POINTEUR then
@@ -1213,21 +1229,11 @@ end
 
 FX -> #type ;
 #type{
-local 
-i : INFO;
-iv : INFOVAR;
 do
-    i := FX^info;
-    match i
-    with INFOVAR then
-        iv := i;
-		FX^type := iv.getType();
+		FX^type := FX^htype;
 		FX^code:=FX^hcode;
 		FX^code_est_adresse := FX^hcode_est_adresse;
         FX^adresse := FX^hadresse;
-    else
-        error(B_17," 1165");
-    end
 end
 }
 
@@ -1244,11 +1250,7 @@ local
  i : INFO;
  iv : INFOVAR;
 do
-    i := FX^info;
-    match i
-    with INFOVAR then
-        iv := i;
-        t := iv.getType();
+    t := FX^htype;
         match t
 		  with STRUCT then
 		    s := t;
@@ -1262,8 +1264,12 @@ do
               end
 		      FX1^htype := c.getType();
 		    tident := c.getType();
-		    if (FX^hcode_est_adresse) then
-		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()); 
+		    if (FX^gauche_affect) then
+                if (FX^hcode_est_adresse) then
+                  FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+                else
+		          FX1^hcode := FX^hcode;
+                end
 		    else
 		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
 		    end
@@ -1272,9 +1278,6 @@ do
 		  else
 		    error(B_19, " 1206"); 
 		  end
-     else
-        error(B_20," 1209");
-    end
 end
 }
 
@@ -1300,6 +1303,7 @@ s : STRUCT ;
 c : CHAMP;
 i : INFO;
 iv : INFOVAR;
+tc : DTYPE;
 do
     i := FX^info;
     match i 
@@ -1320,7 +1324,12 @@ do
 	            else
 	                FX1^htype := c.getType();
                     FX1^hadresse := nil;
-	                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+                    if FX^gauche_affect then
+	                   FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+                    else
+                       tc := c.getType();
+                       FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tc.getTaille());
+                    end
 	            end
 	        else
 	            error(B_22, " 1257");

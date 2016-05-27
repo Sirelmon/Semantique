@@ -1,12 +1,15 @@
+	typedef struct {
+	int x;
+	int y;
+	} Point;
+
 void main () {
 	int a;
 	int b = 2;
 	a = b;
-	if (a==b) {
-		int c = a+b;
-		int d = a+c;
-	} else {
-		int d=3+6*2;
-	}
+	b = 4;
+	Point p;
+	p.y = a;
+	p.x = p.y+b;
 		
 }
