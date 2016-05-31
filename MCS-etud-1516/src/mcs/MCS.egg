@@ -37,6 +37,8 @@ inh machine : IMachine for
  syn dep : INTEGER for ENTITES, ENTITE, BLOC, INST , INSTS, SIX;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
  syn para: LinkedHashMap for PARF,PARFS,PARFSX;
+ syn ordre: INTEGER for PARF;
+ inh hordre : INTEGER for PARF,PARFS,PARFSX;
 -- ces attributs permettent de recuperer les instructions du code ASM inline       
 syn code_asm : STRING for ASM;
 -- la TDS courante
@@ -49,7 +51,7 @@ syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
-syn paraset: ArrayList for ESX,E,ES;
+syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
 
 --terminals
@@ -128,8 +130,8 @@ do
    else
      ENTITES^machine := machine;
      ENTITES^tds:= new TDS();
-     ENTITES^hdep:=3;
-     ENTITES^hcode := machine.genCall("_main") + machine.genFin();
+     ENTITES^hdep:=0;
+     ENTITES^hcode := "";
    end
 end
 }
@@ -197,10 +199,14 @@ iv : INFOVAR;
 do
   if !DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
-    ENTITE^dep := ENTITE^hdep+1;
+    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
     ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
   else
-    ENTITE^code := ENTITE^hcode + DECL^code;
+    if ENTITE^tds.sansFonction() then
+        ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_main") + ENTITE^machine.genFin() + DECL^code;
+    else
+        ENTITE^code := ENTITE^hcode + DECL^code;
+    end
   end
 end
 }
@@ -235,9 +241,9 @@ do
       error(B_02, " 231");
     else
        FONCTION^htype := DECL^htype;
-       call DECL^tds.inserer(DECL^nom, i);
        iff := new INFOFONC(DECL^nom, DECL^htype,m,DECL^tds);
        FONCTION^infofon:= iff;
+       call DECL^tds.inserer(DECL^nom, iff);
     end
 end
 }
@@ -262,6 +268,7 @@ do
     
     FONCTION^infofon.setTds(t2); 
     
+    PARFS^hordre := 0;
 end
 }
 
@@ -271,6 +278,7 @@ t : TDS;
 m : LinkedHashMap;
 do
     m:=FONCTION^infofon.getParas();
+    
     m.putAll(PARFS^para);
     BLOC^infofon := FONCTION^infofon;
     BLOC^hdep := 3;
@@ -298,7 +306,7 @@ do
 end
 }
 
-PARFS ->  PARF PARFSX #GEN ;
+PARFS ->  PARF #hordre PARFSX #GEN ;
 #GEN{
 local
 m : LinkedHashMap;
@@ -309,6 +317,11 @@ do
     PARFS^para := m;
 end
 }
+#hordre{
+do
+    PARFSX^hordre := PARF^ordre;
+end
+}
 PARFSX -> #gen ;
 #gen{
 local
@@ -317,7 +330,7 @@ do
 end
 }
 
-PARFSX ->  virg PARF PARFSX #GEN ;
+PARFSX ->  virg PARF #hordre PARFSX #GEN ;
 #GEN{
 local
 m : LinkedHashMap;
@@ -328,14 +341,22 @@ do
     PARFSX^para:=m;
 end
 }
+#hordre{
+do
+    PARFSX1^hordre := PARF^ordre;
+end
+}
 
 PARF ->  TYPE ident #gen;
 #gen{
 local
-i:INFOTYPE;
+i:INFOVAR;
 m: LinkedHashMap;
+o : INTEGER;
 do
-    i := new INFOTYPE(TYPE^type);
+    o := PARF^hordre + TYPE^type.getTaille();
+    i := new INFOVAR(TYPE^type,new Emplacement(-o, new Register("LB",0)));
+    PARF^ordre := o;
     m := new LinkedHashMap();
     m.put(ident^txt,i);
     PARF^para := m;
@@ -524,14 +545,14 @@ p : POINTEUR;
 do
 t := TYPE^type;
 AFFX^htype:= t;
-match t
-with POINTEUR then
-    p := t;
-    tp := p.getTypeP();
-    AFFX^hcode := INST^machine.genMalloc(tp.getTaille());
-else
+--match t
+--with POINTEUR then
+--    p := t;
+--    tp := p.getTypeP();
+--    AFFX^hcode := INST^machine.genMalloc(tp.getTaille());
+--else
     AFFX^hcode := INST^machine.genPush(TYPE^type);
-end
+--end
 AFFX^nom := ident^txt;
 AFFX^gauche_affect := false;
 end
@@ -694,9 +715,6 @@ do
   error (B_08, " 654" + " mauvais type " + A^type.getNom() + " " + AFFX^type.getNom());
  end
  E^type:= A^type;
- s:= new ArrayList();
- s.add(AFFX^type);
- E^paraset:=s;
  E^code := AFFX^code;
 
 end
@@ -705,7 +723,7 @@ end
 AFFX -> affect  A   #type;
 #type{
 do
-  AFFX^type := A^type;
+      AFFX^type := A^type;
   if (AFFX^hadresse /= nil) then
     AFFX^code :=  AFFX^hcode + A^code
                   + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
@@ -1035,7 +1053,6 @@ F -> caractere #type;
 #type{
 do
        F^type := new DTYPE("char", 1);
-    -- il faut encore définir la bonne taille
        F^code_est_adresse := false;
        F^code := F^machine.genCst(caractere^txt);
        F^adresse := nil;
@@ -1166,11 +1183,12 @@ i :INFO;
 iv : INFOVAR;
 i_f : INFOFONC;
 t : DTYPE;
-e : Emplacement; 
+e : Emplacement;
+eti : String; 
 do
     i := F^tds.chercherGlobalement(ident^txt);
     if i = nil then
-        error(B_14," 1105");
+        error(B_14," 1105" + ident^txt);
     else
         FX^info := i;
         --FX^htype := i.getType();
@@ -1207,11 +1225,17 @@ do
         else match i
         with INFOFONC then
             i_f := i;
-            FX^hcode := F^machine.genCall(i_f.getEtiq());
-            FX^hcode_est_adresse := false;
+            eti := i_f.getEtiq();
+            FX^htype := i_f.getRtype();
+            if (eti = nil) then
+                error (b_155, "fonction sans etiquette");
+            else
+                FX^hcode := F^machine.genCall("_" + eti) + F^machine.genComment("appel de fonction");
+                FX^hcode_est_adresse := false;
+            end
     else
             
-        error(B_16, " 1136");
+        error(B_16, " 1136" + ident^txt);
     end
     end
     end
@@ -1365,7 +1389,6 @@ do
     match FX^info 
       with INFOFONC then
         iff := FX^info;
-
         if ~(iff.mmPara(ES^paraset)) then
             error(B_24," 1291" + " parametres pas egaux");
         end
@@ -1417,7 +1440,7 @@ end
 local
 do
     ES^paraset := ESX^paraset;
-    ES^code := ESX^code + E^code;
+    ES^code := ESX^code;
 end
 }
 
@@ -1439,9 +1462,9 @@ end
 }
 #htype {
 do
-    E^paraset.add(E^type);
-    ESX1^hparaset:=E^paraset;
-    ESX1^hcode := ESX^hcode + E^code;
+    ESX^hparaset.add(E^type);
+    ESX1^hparaset:=ESX^hparaset;
+    ESX1^hcode := E^code + ESX^hcode;
 end
 }
 
@@ -1456,36 +1479,40 @@ end
 ------------- inline asm ----------------
 -- peut être utile pour implanter des sous-programmes
 -- directement en assembleur TAM.
---ENTITE ->   asm #tds ASM#gen; 
---#tds {
---do 
---  -- A faire : Remplacer 'null' par la table courante pour que
---  -- le code  ASM puisse acceder aux variables de MC ou MCS
---  ASM^tds_asm := null; 
---end
---}
---#gen {
---do
---  -- On recupere le code assembleur 'inline' dans : ASM^code_asm ;
---end
---}
---
---INST ->  asm   #tds ASM #gen ;
---#tds {
---do
---  -- A remplacer par la table courante pour que
---  -- l'assembleur puisse acceder aux variables
---  ASM^tds_asm := null; 
---end
---}
---
---#gen {
---do
---  -- ASM^code_asm contient le code assembleur inline
---  -- dans lequel les noms de variables ont ete remplaces
---  -- par leurs adresses.
---end
---}
+ENTITE ->   asm #tds ASM#gen; 
+#tds {
+do 
+  -- A faire : Remplacer 'null' par la table courante pour que
+  -- le code  ASM puisse acceder aux variables de MC ou MCS
+  ASM^tds_asm := ENTITE^tds; 
+end
+}
+#gen {
+do
+  -- On recupere le code assembleur 'inline' dans : ASM^code_asm ;
+  ENTITE^code := ASM^code_asm;
+  ENTITE^dep := ENTITE^hdep;
+end
+}
+
+INST ->  asm   #tds ASM #gen ;
+#tds {
+do
+  -- A remplacer par la table courante pour que
+  -- l'assembleur puisse acceder aux variables
+  ASM^tds_asm := INST^tds; 
+end
+}
+
+#gen {
+do
+  -- ASM^code_asm contient le code assembleur inline
+  -- dans lequel les noms de variables ont ete remplaces
+  -- par leurs adresses.
+  INST^code := ASM^code_asm;
+  INST^dep := INST^hdep;
+end
+}
 
 ----------------- CS extension --------------------
 -- Decommenter les regles suivantes pour l'extension CS

@@ -130,8 +130,8 @@ do
    else
      ENTITES^machine := machine;
      ENTITES^tds:= new TDS();
-     ENTITES^hdep:=0;
-     ENTITES^hcode := "";
+     ENTITES^hdep:=3;
+     ENTITES^hcode := machine.genCall("_main") + machine.genFin();
    end
 end
 }
@@ -199,14 +199,10 @@ iv : INFOVAR;
 do
   if !DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
-    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
+    ENTITE^dep := ENTITE^hdep+1;
     ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
   else
-    if ENTITE^tds.sansFonction() then
-        ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_main") + ENTITE^machine.genFin() + DECL^code;
-    else
-        ENTITE^code := ENTITE^hcode + DECL^code;
-    end
+    ENTITE^code := ENTITE^hcode + DECL^code;
   end
 end
 }

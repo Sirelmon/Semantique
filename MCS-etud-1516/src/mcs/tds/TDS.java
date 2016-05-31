@@ -1,5 +1,6 @@
 package mcs.tds;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -82,6 +83,15 @@ public class TDS extends HashMap<String, INFO> {
 			}
 		}
 		return somme;
+	}
+	
+	public boolean sansFonction() {
+		Collection<INFO> col = this.values();
+		boolean result = true;
+		for (INFO info : col) {
+			result = result & !(info instanceof INFOFONC);
+		}
+		return result;
 	}
 
 	public String toString() {
