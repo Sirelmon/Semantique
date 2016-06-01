@@ -11,6 +11,8 @@
 	HALT
 _somme:
 	LOAD(1) -1[LB]
+	LOAD(1) -2[LB]
+	SUBR IAdd
 	POP(0)0
 	RETURN (1) 2
 _main:
@@ -21,10 +23,7 @@ _main:
 	LOAD(1) 3[LB]
 	STORE(1) 4[LB]
 ; gauche_affect
-	LOADL 'r'
-	STORE(1) 1[SB]
-; gauche_affect
-	LOAD(1) 1[SB]
+	LOAD(1) 4[LB]
 	LOAD(1) 3[LB]
 ; Appel a _somme
 	CALL(SB) _somme

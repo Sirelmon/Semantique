@@ -79,4 +79,8 @@ public class OPERATEUR {
 	public int getNum() {
 		return this.num;
 	}
+
+	public Collection<String> getTypesAdmis() {
+		return typesAdmis;
+	}
 }

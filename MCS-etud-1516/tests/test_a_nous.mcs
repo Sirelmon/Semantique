@@ -2,13 +2,12 @@ int x;
 
 char f;
 
-int somme (int a, char b) {
-	return a;
+int somme (int a, int b) {
+	return a+b;
 }
 
 void main() {
 	int a = 1;
 	int b = a;
-	f = 'r';
-	x = somme (a,f);
+	x = somme (a,b);
 }
