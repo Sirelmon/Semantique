@@ -197,10 +197,11 @@ end
 local
 iv : INFOVAR;
 do
-  if !DECL^est_fonction then
+  if ~DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
     ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
-    ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+    ENTITE^tds.inserer(ident^txt,iv);
   else
     if ENTITE^tds.sansFonction() then
         ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_main") + ENTITE^machine.genFin() + DECL^code;
@@ -566,7 +567,7 @@ do
  i:= INST^tds.chercherGlobalement(ident^txt);
  if i /= null then error (B_06, " 528");
  else 
-    e := new Emplacement(INST^hdep,new Register("SB",0));
+    e := new Emplacement(INST^hdep,new Register("LB",0));
     iv:= new INFOVAR(TYPE^type,e);
     AFFX^hadresse := e;
     INST^tds.inserer(ident^txt,iv);
@@ -726,7 +727,7 @@ do
       AFFX^type := A^type;
   if (AFFX^hadresse /= nil) then
     AFFX^code :=  AFFX^hcode + A^code
-                  + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
+                  + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille(),AFFX^hadresse.getReg());
   else
     AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
   end
@@ -1202,20 +1203,20 @@ do
             match t
             with STRUCT then
                 if ~F^gauche_affect then
-                    FX^hcode := F^machine.genAdr(e.getDep());
+                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
                 else
                     FX^hcode := "";
                 end
                 FX^hcode_est_adresse := false;
             else match t
             with POINTEUR then
-                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
                 FX^hcode_est_adresse := true;
             else
                 if F^gauche_affect then
                     FX^hcode := F^machine.genComment("gauche_affect");
                 else
-                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
                 end
                 FX^hcode_est_adresse := false;
             end
@@ -1233,11 +1234,11 @@ do
                 FX^hcode := F^machine.genCall("_" + eti) + F^machine.genComment("appel de fonction");
                 FX^hcode_est_adresse := false;
             end
-    else
+        else
             
-        error(B_16, " 1136" + ident^txt);
-    end
-    end
+            error(B_16, " 1136" + ident^txt);
+        end
+        end
     end
 end
 }

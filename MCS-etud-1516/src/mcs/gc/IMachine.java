@@ -40,13 +40,13 @@ public interface IMachine {
 
 	String genReadIndirectMem(int taille);
 
-	String genAdr(int dep);
+	String genAdr(int dep, Register reg);
 
 	String genCall(String etiq);
 
 	String genNull();
 
-	String genReadMem(int dep, int taille);
+	String genReadMem(int dep, int taille, Register reg);
 
 	String genCst(String att_txt);
 
@@ -56,7 +56,7 @@ public interface IMachine {
 
 	String genIf(String att_code, String att_code2, String att_code3);
 
-	String genWriteMem(int dep, int taille);
+	String genWriteMem(int dep, int taille, Register reg);
 
 	String genFin();
 

@@ -1,34 +1,34 @@
 ; Generated code for tests/test_a_nous.mcs.
 ; Do not modify by hand
+   ; declaration de x en 0/SB taille = 1
+	PUSH 1
+; fin de declaration de x
+   ; declaration de f en 1/SB taille = 1
+	PUSH 1
+; fin de declaration de f
 ; Appel a _main
 	CALL(SB) _main
 	HALT
-_malloc:
-	PUSH 1
-; inline code_asm
-
-
-	LOAD (1) -1[LB]
-	; acces au parametre taille
-
-	SUBR Malloc
-	; allocation
-
-	STORE (1) 3[SB]
-	; resultat dans adr
-
-	LOAD(1) 3[LB]
-	POP(0)1
-	RETURN (1) 1
+_somme:
+	LOAD(1) -1[LB]
+	POP(0)0
+	RETURN (1) 2
 _main:
 	PUSH 1
 	LOADL 1
-; Appel a _malloc
-	CALL(SB) _malloc
-; appel de fonction
 	STORE(1) 3[LB]
 	PUSH 1
 	LOAD(1) 3[LB]
 	STORE(1) 4[LB]
+; gauche_affect
+	LOADL 'r'
+	STORE(1) 1[SB]
+; gauche_affect
+	LOAD(1) 1[SB]
+	LOAD(1) 3[LB]
+; Appel a _somme
+	CALL(SB) _somme
+; appel de fonction
+	STORE(1) 0[SB]
 	POP(0)2
 	RETURN (0) 0

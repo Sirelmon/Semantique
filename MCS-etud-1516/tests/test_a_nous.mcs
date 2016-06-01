@@ -1,14 +1,14 @@
-int * malloc(int taille){
-  int adr;
-  asm {
-    LOAD %taille    ; acces au parametre taille
-    SUBR Malloc     ; allocation
-    STORE %adr      ; resultat dans adr
-  }
-  return adr;
+int x;
+
+char f;
+
+int somme (int a, char b) {
+	return a;
 }
 
 void main() {
-	int * a = malloc(1);
-	int * b = a;
+	int a = 1;
+	int b = a;
+	f = 'r';
+	x = somme (a,f);
 }

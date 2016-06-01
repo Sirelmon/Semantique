@@ -46,7 +46,7 @@ public class MTAM extends AbstractMachine {
 	// genere le code pour une declaration (avec initialisation)
 	public String genDecl(String n, INFOVAR i, String t) {
 		int taille = i.getType().getTaille();
-		return "   ; declaration de " + n + " en " + i.getEmpl() + "/LB"
+		return "   ; declaration de " + n + " en " + i.getEmpl().getDep() + "/" + i.getEmpl().getReg().getName()
 				+ " taille = " + taille + "\n" + t + "; fin de declaration de "
 				+ n + "\n";
 	}
@@ -92,14 +92,14 @@ public class MTAM extends AbstractMachine {
 		return "\tPOP(0)" + i + "\n";
 	}
 
-	public String genReadMem(int dep, int taille) {
+	public String genReadMem(int dep, int taille, Register reg) {
 		// TODO Auto-generated method stub
-		return "\tLOAD(" + taille + ") " + dep + "[LB]\n";
+		return "\tLOAD(" + taille + ") " + dep + "[" + reg.getName() + "]\n";
 	}
 
-	public String genWriteMem(int dep, int taille) {
+	public String genWriteMem(int dep, int taille, Register reg) {
 		// TODO Auto-generated method stub
-		return "\tSTORE(" + taille + ") " + dep + "[LB]\n";
+		return "\tSTORE(" + taille + ") " + dep + "[" + reg.getName() + "]\n";
 	}
 
 	public String genReadIndirectMem(int taille) {
@@ -124,8 +124,8 @@ public class MTAM extends AbstractMachine {
 		return "\tLOADL " + taille + "\n" + "\tSUBR Malloc\n";
 	}
 
-	public String genAdr(int dep) {
-		return "\tLOADA " + dep + "[LB]\n";
+	public String genAdr(int dep, Register reg) {
+		return "\tLOADA " + dep + "[" + reg.getName() +"]\n";
 	}
 
 	public String genAdrField(int dep) {

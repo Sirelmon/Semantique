@@ -87,11 +87,13 @@ public class TDS extends HashMap<String, INFO> {
 	
 	public boolean sansFonction() {
 		Collection<INFO> col = this.values();
-		boolean result = true;
+		int cpt = 0;
 		for (INFO info : col) {
-			result = result & !(info instanceof INFOFONC);
+			if (info instanceof INFOFONC) {
+				cpt ++;
+			}
 		}
-		return result;
+		return (cpt==1);
 	}
 
 	public String toString() {
