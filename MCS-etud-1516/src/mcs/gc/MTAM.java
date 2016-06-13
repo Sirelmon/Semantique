@@ -33,7 +33,7 @@ public class MTAM extends AbstractMachine {
 
 	public String genFonction(String etiquette, int taillepars,
 			int tailleretour, String code) {
-		return "_" + etiquette + ":\n" + code + "\tRETURN (" + tailleretour + ") "
+		return  etiquette + ":\n" + code + "\tRETURN (" + tailleretour + ") "
 				+ taillepars + "\n";
 
 	}

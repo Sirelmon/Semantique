@@ -19,20 +19,15 @@ import mcs.type.DTYPE;
 public class INFOFONC implements INFO{
 
 	protected DTYPE Rtype;
-	protected LinkedHashMap<String, INFOVAR> paras;
+	protected ArrayList<SURCHARGE> parasSurcharge;
 	protected TDS tds; //TDS des variables locaux
-	protected String etiq;
+
+	public ArrayList<SURCHARGE> getParasSurcharge() {
+		return parasSurcharge;
+	}
 	
 	public DTYPE getRtype() {
 		return Rtype;
-	}
-
-	public LinkedHashMap<String, INFOVAR> getParas() {
-		return paras;
-	}
-
-	public String getEtiq() {
-		return etiq;
 	}
 
 	public TDS getTds() {
@@ -43,35 +38,74 @@ public class INFOFONC implements INFO{
 		this.tds = t;
 	}
 	
-	public INFOFONC(String nom, DTYPE type, LinkedHashMap<String,INFOVAR> para, TDS t){
+	public INFOFONC(DTYPE type, ArrayList<SURCHARGE> surcharges, TDS t){
 		this.Rtype =type;
-		this.paras = para;
-		this.etiq = nom;
 		this.tds = t;
+		this.parasSurcharge = surcharges;
 	}
 	
-	public int getTailleParas() {
-		int taille = 0;
-		for(Entry<String, INFOVAR> entry : paras.entrySet()) {
-		    taille += entry.getValue().getType().getTaille();
-		}
-		return taille;
+	public String getEtiq() {
+		return this.getSurcharge(0).getEtiq().split("X0")[0];
 	}
 	
-	public String toString(){
-		return ";FONC: étiquette:"+etiq+" ,type de retour:"+Rtype+" ,paras d'entrée:"+paras+'\n';
+	public int addSurcharge(String nom) {
+		int num_surcharge = this.getParasSurcharge().size();
+		this.getParasSurcharge().add(new SURCHARGE(new LinkedHashMap<String,INFOVAR>(),"_" + nom + "X" + num_surcharge));
+		return num_surcharge;
 	}
 	
-	public boolean mmPara(ArrayList list){
-		
-		Collection<INFOVAR> col = this.getParas().values();
-		int i =0;
-		boolean result= true; 
-		for ( INFOVAR in: col){
-			result = result & (in.getType().compareTo( (DTYPE) list.get(i)));
-			i++;
+	public int mmParas(ArrayList<DTYPE> list){
+		int result = -1;
+		for (int i=0; i< this.getParasSurcharge().size(); i++) {
+			Collection<INFOVAR> col = this.getParasSurcharge().get(i).getParas().values();
+			if (col.size() == list.size()) {
+				int j =0;
+				boolean correct = true;
+				for ( INFOVAR in: col){
+					correct = correct & (in.getType().compareTo(list.get(j)));
+					j++;
+				}
+				if (correct) {
+					result = i;
+				}
+			}
 		}
 		return result;
-	} 
+	}
+	
+	public int mmParas(LinkedHashMap<String, INFOVAR> list){
+		int result = -1;
+		INFOVAR[] tab;
+		tab = list.values().toArray(new INFOVAR[0]);
+		for (int i=0; i< this.getParasSurcharge().size(); i++) {
+			Collection<INFOVAR> col = this.getParasSurcharge().get(i).getParas().values();
+			if (col.size() == tab.length) {
+				int j =0;
+				boolean correct = true;
+				for ( INFOVAR in: col){
+					correct = correct & (in.getType().compareTo(tab[j].getType()));
+					j++;
+				}
+				if (correct) {
+					result = i;
+				}
+			}
+		}
+		return result;
+	}
+	
+
+	public String toString() {
+		String s = "FONCS : type de retour: " + this.getRtype() + " , liste des surcharges :\n";
+		for (SURCHARGE surcharge : parasSurcharge) {
+			s += surcharge.toString();
+		}
+		return s;
+	}
+
+	public SURCHARGE getSurcharge (int num_s) {
+		return this.parasSurcharge.get(num_s);
+	
+	}
 	
 }

@@ -46,13 +46,14 @@ inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
 T, TX, ES, ESX, RX,F,FX,AX;
-inh nom : STRING for DECL, AFFX;
+inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
+--inh hnum_surcharge : INTEGER for FONCTION;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -204,7 +205,7 @@ do
     ENTITE^tds.inserer(ident^txt,iv);
   else
     if ENTITE^tds.sansFonction() then
-        ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_main") + ENTITE^machine.genFin() + DECL^code;
+        ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_mainX0") + ENTITE^machine.genFin() + DECL^code;
     else
         ENTITE^code := ENTITE^hcode + DECL^code;
     end
@@ -234,16 +235,29 @@ DECL -> #def FONCTION #fct;
 local
 i :INFO;
 iff : INFOFONC;
-m :LinkedHashMap;
+m : ArrayList;
+surcharge : SURCHARGE;
+num_surcharge : INTEGER;
 do
-    m := new LinkedHashMap();
+    m := new ArrayList();
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
-      error(B_02, DECL^nom);
+      match i
+      with INFOFONC then
+        iff := i;
+--        num_surcharge := iff.addSurcharge(DECL^nom);
+        FONCTION^infofon := iff;
+--        FONCTION^hnum_surcharge := num_surcharge;
+      else
+        error(B_16, DECL^nom);
+      end
     else
        FONCTION^htype := DECL^htype;
-       iff := new INFOFONC(DECL^nom, DECL^htype,m,DECL^tds);
+--       surcharge := new SURCHARGE(new LinkedHashMap(), DECL^nom + "X0");
+--       m.add(surcharge);
+       iff := new INFOFONC(DECL^htype,m,DECL^tds);
        FONCTION^infofon:= iff;
+--       FONCTION^hnum_surcharge := 0;
        call DECL^tds.inserer(DECL^nom, iff);
     end
 end
@@ -257,6 +271,9 @@ end
 }
 -- Fonction
 FONCTION ->    paro #tds PARFS parf #info BLOC #code ;
+global
+s : SURCHARGE;
+num_surcharge : INTEGER;
 #tds{
 local
 t: TDS;
@@ -278,11 +295,18 @@ local
 t : TDS;
 m : LinkedHashMap;
 do
-    m:=FONCTION^infofon.getParas();
-    
-    m.putAll(PARFS^para);
-    BLOC^infofon := FONCTION^infofon;
-    BLOC^hdep := 3;
+
+    --penser à surcharge la méthode mmParas pour gérer les LinkedHashMap en paramètre
+    if (FONCTION^infofon.mmParas(PARFS^para) /= -1) then
+        error(B_02, FONCTION^nom);
+    else
+        num_surcharge := FONCTION^infofon.addSurcharge(FONCTION^nom);
+        s:=FONCTION^infofon.getSurcharge(num_surcharge);
+        m := s.getParas();
+        m.putAll(PARFS^para);
+        BLOC^infofon := FONCTION^infofon;
+        BLOC^hdep := 3;
+    end
 end
 }
 
@@ -291,9 +315,9 @@ local
 t : DTYPE;
 tailleparas : INTEGER;
 do
-  tailleparas := FONCTION^infofon.getTailleParas();
+  tailleparas := s.getTailleParas();
   t := FONCTION^infofon.getRtype();
-  FONCTION^code := FONCTION^machine.genFonction(FONCTION^infofon.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
+  FONCTION^code := FONCTION^machine.genFonction(s.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
 end
 }
 
@@ -1226,14 +1250,9 @@ do
         else match i
         with INFOFONC then
             i_f := i;
-            eti := i_f.getEtiq();
             FX^htype := i_f.getRtype();
-            if (eti = nil) then
-                error (b_155, "fonction sans etiquette");
-            else
-                FX^hcode := F^machine.genCall("_" + eti) + F^machine.genComment("appel de fonction");
+                FX^hcode := "";
                 FX^hcode_est_adresse := false;
-            end
         else
             
             error(B_09,ident^txt);
@@ -1385,15 +1404,20 @@ FX ->   paro ES parf #htype FX #type;
 #htype{
 local
 iff :INFOFONC;
-
+num_surcharge : INTEGER;
+surcharge : SURCHARGE;
 do
     match FX^info 
       with INFOFONC then
         iff := FX^info;
-        if ~(iff.mmPara(ES^paraset)) then
+        num_surcharge := iff.mmParas(ES^paraset);
+        if (num_surcharge = -1) then
+            surcharge := iff.getSurcharge(0);
             error(B_13,iff.getEtiq());
+        else
+            surcharge := iff.getSurcharge(num_surcharge);
+            FX1^hcode := ES^code + FX^machine.genCall(surcharge.getEtiq()) + FX^machine.genComment("appel de fonction");
         end
-        FX1^hcode := ES^code + FX^hcode;
       else 
         error(B_14);  
     end

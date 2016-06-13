@@ -90,7 +90,7 @@ public class TDS extends HashMap<String, INFO> {
 		int cpt = 0;
 		for (INFO info : col) {
 			if (info instanceof INFOFONC) {
-				cpt ++;
+				cpt += ((INFOFONC) info).getParasSurcharge().size();
 			}
 		}
 		return (cpt==1);

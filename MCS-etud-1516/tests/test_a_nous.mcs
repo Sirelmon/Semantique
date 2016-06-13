@@ -6,8 +6,18 @@ int somme (int a, int b) {
 	return a+b;
 }
 
+int somme (int a, int b, int c) {
+	return a+b+c;
+}
+
+int somme (char a, int c) {
+	return c;
+}
+
 void main() {
 	int a = 1;
 	int b = a;
 	x = somme (a,b);
+	x = somme (a,b,x);
+	x = somme ('w',a);
 }

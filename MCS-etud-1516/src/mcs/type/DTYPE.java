@@ -13,6 +13,10 @@ public class DTYPE {
 	public int getTaille() {
 		return taille;
 	}
+	
+	public void setTaille(int taille) {
+		this.taille = taille;
+	}
 
 	protected String nom;
 

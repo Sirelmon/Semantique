@@ -6,16 +6,28 @@
    ; declaration de f en 1/SB taille = 1
 	PUSH 1
 ; fin de declaration de f
-; Appel a _main
-	CALL(SB) _main
+; Appel a _mainX0
+	CALL(SB) _mainX0
 	HALT
-_somme:
+_sommeX0:
 	LOAD(1) -1[LB]
 	LOAD(1) -2[LB]
 	SUBR IAdd
 	POP(0)0
 	RETURN (1) 2
-_main:
+_sommeX1:
+	LOAD(1) -1[LB]
+	LOAD(1) -2[LB]
+	SUBR IAdd
+	LOAD(1) -3[LB]
+	SUBR IAdd
+	POP(0)0
+	RETURN (1) 3
+_sommeX2:
+	LOAD(1) -2[LB]
+	POP(0)0
+	RETURN (1) 2
+_mainX0:
 	PUSH 1
 	LOADL 1
 	STORE(1) 3[LB]
@@ -25,8 +37,23 @@ _main:
 ; gauche_affect
 	LOAD(1) 4[LB]
 	LOAD(1) 3[LB]
-; Appel a _somme
-	CALL(SB) _somme
+; Appel a _sommeX0
+	CALL(SB) _sommeX0
+; appel de fonction
+	STORE(1) 0[SB]
+; gauche_affect
+	LOAD(1) 0[SB]
+	LOAD(1) 4[LB]
+	LOAD(1) 3[LB]
+; Appel a _sommeX1
+	CALL(SB) _sommeX1
+; appel de fonction
+	STORE(1) 0[SB]
+; gauche_affect
+	LOAD(1) 3[LB]
+	LOADL 'w'
+; Appel a _sommeX2
+	CALL(SB) _sommeX2
 ; appel de fonction
 	STORE(1) 0[SB]
 	POP(0)2

@@ -45,15 +45,15 @@ syn code_asm : STRING for ASM;
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, RX,F,FX,AX;
+T, TX, ES, ESX, RX,F,FX,AX, DEFS;
 inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
+inh hnum_surcharge : INTEGER for FONCTION;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
---inh hnum_surcharge : INTEGER for FONCTION;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -245,19 +245,19 @@ do
       match i
       with INFOFONC then
         iff := i;
---        num_surcharge := iff.addSurcharge(DECL^nom);
+        num_surcharge := iff.addSurcharge();
         FONCTION^infofon := iff;
---        FONCTION^hnum_surcharge := num_surcharge;
+        FONCTION^hnum_surcharge := num_surcharge;
       else
         error(B_16, DECL^nom);
       end
     else
        FONCTION^htype := DECL^htype;
---       surcharge := new SURCHARGE(new LinkedHashMap(), DECL^nom + "X0");
---       m.add(surcharge);
+       surcharge := new SURCHARGE(new LinkedHashMap(), DECL^nom + "X0");
+       m.add(surcharge);
        iff := new INFOFONC(DECL^htype,m,DECL^tds);
        FONCTION^infofon:= iff;
---       FONCTION^hnum_surcharge := 0;
+       FONCTION^hnum_surcharge := 0;
        call DECL^tds.inserer(DECL^nom, iff);
     end
 end
@@ -271,9 +271,6 @@ end
 }
 -- Fonction
 FONCTION ->    paro #tds PARFS parf #info BLOC #code ;
-global
-s : SURCHARGE;
-num_surcharge : INTEGER;
 #tds{
 local
 t: TDS;
@@ -293,16 +290,15 @@ end
 #info{
 local
 t : TDS;
+s : SURCHARGE;
 m : LinkedHashMap;
 do
-
+    s:=FONCTION^infofon.getSurcharge(FONCTION^hnum_surcharge);
+    m := s.getParas();
     --penser à surcharge la méthode mmParas pour gérer les LinkedHashMap en paramètre
     if (FONCTION^infofon.mmParas(PARFS^para) /= -1) then
         error(B_02, FONCTION^nom);
     else
-        num_surcharge := FONCTION^infofon.addSurcharge(FONCTION^nom);
-        s:=FONCTION^infofon.getSurcharge(num_surcharge);
-        m := s.getParas();
         m.putAll(PARFS^para);
         BLOC^infofon := FONCTION^infofon;
         BLOC^hdep := 3;
@@ -315,9 +311,9 @@ local
 t : DTYPE;
 tailleparas : INTEGER;
 do
-  tailleparas := s.getTailleParas();
+  tailleparas := FONCTION^infofon.getTailleParas();
   t := FONCTION^infofon.getRtype();
-  FONCTION^code := FONCTION^machine.genFonction(s.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
+  FONCTION^code := FONCTION^machine.genFonction(FONCTION^infofon.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
 end
 }
 
@@ -385,7 +381,6 @@ do
     m := new LinkedHashMap();
     m.put(ident^txt,i);
     PARF^para := m;
-    call PARF^tds.inserer(ident^txt,i);
 end
 }
 
@@ -1410,13 +1405,12 @@ do
     match FX^info 
       with INFOFONC then
         iff := FX^info;
-        num_surcharge := iff.mmParas(ES^paraset);
+        num_surcharge := iff.mmPara(ES^paraset);
         if (num_surcharge = -1) then
-            surcharge := iff.getSurcharge(0);
             error(B_13,iff.getEtiq());
         else
             surcharge := iff.getSurcharge(num_surcharge);
-            FX1^hcode := ES^code + FX^machine.genCall(surcharge.getEtiq()) + FX^machine.genComment("appel de fonction");
+            FX1^hcode := ES^code + FX^machine.genCall("_" + surcharge.getEtiq()) + FX^machine.genComment("appel de fonction");
         end
       else 
         error(B_14);  
@@ -1543,15 +1537,48 @@ end
 ----------------- CS extension --------------------
 -- Decommenter les regles suivantes pour l'extension CS
 -------------------------------------------------
---TYPE -> bool;
+--STYPE -> bool #type;
+--#type{
+--do
+--       STYPE^type := new DTYPE("bool", 1);
+--end
+--}
 ---- definit un contenu d'un namespace
---ENTITE -> namespace identc aco ENTITES acf ;
+--ENTITE -> namespace identc #tds aco ENTITES acf #code ;
+--#tds{
+--do
+--    ENTITES^tds := new TDS(ENTITE^tds);
+--end
+--}
+--#code{
+--do
+--    ENTITE^code := ENTITES^code;
+--    ENTITE^dep := ENTITES^dep;
+--end
+--}
 ---- donne l acces au contenu du 'namespace'
 --ENTITE -> using identc IDC pv ;
 --IDC -> ;
 --IDC -> pt identc IDC ;
 ---- definition d'une classe (peut etre en dehors d'un namespace)
---ENTITE -> ACCES class identc HERITAGE aco DEFS acf ;
+--ENTITE -> ACCES class identc #tds HERITAGE aco DEFS acf ;
+--#tds{
+--local
+--i : INFO;
+--ic : INFOCLASS;
+--tds : TDS;
+--do
+--    tds := new TDS(ENTITE^tds);
+--    i := ENTITE^tds.chercherGlobalement(identc^txt);
+--    if i /= nil then
+--        error(B_17, identc^txt);
+--    else
+--        ic := new INFOCLASS(tds, identc^txt);
+--        ENTITE^tds.inserer(ic);
+--        DEFS^tds := tds;
+--    end
+--end
+--}
 ---- acces 
 --ACCES -> public;
 --ACCES -> private;
@@ -1570,8 +1597,9 @@ end
 --BASE -> dpts base paro ES parf  ;
 ---- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
 --PARF ->  MODE TYPE ident ;
---MODE -> ref ;
---MODE -> out ; 
+--MODE -> ;
+----MODE -> ref ;
+----MODE -> out ; 
 --F -> true;
 --F -> false;
 --F -> this FX;
