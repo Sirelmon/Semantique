@@ -33,48 +33,102 @@ La réalisation de ce compilateur passe passe par la gestion de la table des sym
 \section{Construction de la table des symboles}
 
 La table des symboles doit contenir toutes les informations sur ce qui est déclaré dans le programme (variables, types, fonction) sauf leur valeur en temps réel. \\
-Une table des symboles est une liste d'élément de type $INFO$ que l'on peut repérer par leur nom (nom de variable par exemple).
+Une table des symboles est une liste d'élément de type \textsc{info} que l'on peut repérer par leur nom (nom de variable par exemple).
 
 \subsection{Contenu et hiérarchie}
 
-Nous avons donc modélisé notre table comme un $HashMap<String,INFO>$.
+Nous avons donc modélisé notre table comme un $HashMap<String$,\textsc{infovar}$>$.
 Ce sont les différents couples (Nom des variables (fonctions ...), informations liées).\\
-On trouve ainsi plusieurs type d'informations (toutes héritées de la classe $INFO$): 
+On trouve ainsi plusieurs type d'informations (toutes héritées de la classe \textsc{info}): 
 \begin{itemize}
-\item Les $INFOVAR$ liées au variables. Elles contiennent simplement le type de la variable, et son emplacement dans la pile. 
-\item Les $INFOTYPE$ liées aux types créés avec $typedef$. Elles contiennent un type (celui créé). 
-\item Les $INFOFONC$, liées aux fonctions. Elles contiennent le type de retour de la fonction, la liste des différentes possibilités de paramètres pouvant être utilisés avec cette fonction (surcharges), ainsi qu'une TDS fille de la TDS courante, contenant les informations sur les variables (ou types) locales à la fonction. 
+\item Les \textsc{infovar} liées au variables. Elles contiennent simplement le type de la variable, et son emplacement dans la pile. 
+\item Les \textsc{infotype} liées aux types créés avec $typedef$. Elles contiennent un type (celui créé). 
+\item Les \textsc{infofonc}, liées aux fonctions. Elles contiennent le type de retour de la fonction, la liste des différentes possibilités de paramètres pouvant être utilisés avec cette fonction (surcharges), ainsi qu'une TDS fille de la TDS courante, contenant les informations sur les variables (ou types) locales à la fonction. 
 \end{itemize}
 
-%%Schéma de la TDS d'une infofonc
 
 
-On crée donc une TDS fille à chaque nouvelle fonction, mais également lorsque l'on rentre dans un nouveau bloc. On obtient ainsi la hiérarchie suivante: 
+On crée donc une TDS fille à chaque nouvelle fonction, mais également lorsque l'on rentre dans un nouveau bloc. On obtient ainsi la hiérarchie suivante: \\\\
 
-%%Schéma tds
-
+\includegraphics[scale=0.2]{structureMicroC.jpg}
 
 \subsection{Gestion des variables globales}
 
-Le compilateur implémenté permet l'utilisation de variables globales (déclarées tout au début du programme). 
+Le compilateur implémenté permet l'utilisation de variables globales (déclarées tout au début du programme). Pour ce faire, l'emplacement des variables globales au programme (qui ne sont pas déclarées à l'intérieur d'un bloc) se situera dans le registre {\bf SB}, et les variables locales seront déclarées dans le registre {\bf LB}.
 
 \subsection{Ajouts pour le $\mu C \#$}
 
+Les notions de  $namespace$ et de $classe$ ont été ajoutées dans le langage $\mu C \#$. Deux nouveaux types d'informations seront donc présents dans la table: 
+\begin{itemize}
+\item les \textsc{infonamespace}, liées aux namespace. Elles contiennent la TDS des classes de ce namespace.
+\item les \textsc{infoclass} liées aux classes. Elles contiennent un \textsc{struct} de ses attributs, une liste des méthodes de la classe (sous forme d'\textsc{infofonc}).
+\end{itemize}
+
+%%Hiérarchie à définir à la fin 
+
+
+
 \section{Préconditions et gestions des erreurs de type}
+
+Pour la gestion des types et des erreurs de types, nous avons imposé certaines conditions, notamment pour la compatibilité des opérateurs. Dans la gestion des opérateurs, on prend en compte le type {\bf bool}, pris en compte dans le langage $\mu C \#$.
+
 
 \subsection{Opérateurs et compatibilité de types}
 
+\begin{itemize}
+\item Les opérateurs de comparaison $\leq$, $\geq$ ,$<$,$>$,$+$ (unaire), $-$ (unaire), $-$ (binaire), $*$, $/$, $\%$ ne sont compatible qu'avec les types \textbf{ int}.
+\item Les opérateurs $=$ et $\neq$  sont compatible avec les types {\bf int} et {\bf char}.
+\item L'opérateur $+$ est compatible avec les types {\bf int}, {\bf string } et {\bf char }.
+\item Les opérateurs $\vee,\wedge,$ $not$ sont compatibles avec les opérateurs {\bf int } et {\bf bool }.
+\end{itemize}
+
+Ainsi, afin de pouvoir gérer les types lors des opérations sur des variables, nous avons créé le type Opérateur, qui affecte à chaque numéro d'opérateurs (numérotés de 1 à 15) une liste des noms des types admis.\\
+ On peut ainsi tester la compatibilité d'un type pour un opérateur dans la classe DTYPE. On peut donc effectuer une opération à condition que les deux opérandes aient le même type, et que ce type soit compatible avec celui de l'opérateur. Sinon, on renvoie une erreur.
+
+
+
 \subsection{Types particuliers}
 
-\subsubsection{Gestion des structs}
-
-\subsubsection{Gestion des pointeurs}
+ Les types particuliers comme les \textsc{pointeurs} et les \textsc{structs} ont été géré de la même manière qu'en TP.
 
 \section{Fonctions et leurs surcharges}
 
+Les fonctions ont été implémentées de manière à pouvoir les surcharger $i.e$: on peut appeler une fonction avec plusieurs listes de paramètres différentes, mais {\bf le type de retour doit toujours rester le même}. Pour ce faire, nous avons implémenté les fonctions de la manière suivante: \\
+Une \textsc{infofonc} contient une liste de \textsc{surcharges}. \\
+Une \textsc{surcharge} est une liste d'\textsc{infovar} ainsi que l'étiquette associée à la surcharge (ce sera dans notre cas \textsl{nom$\_$fonctionXnum$\_$surcharge}  \\\\
+Ainsi, lors de la déclaration d'une fonction, on réalise les actions suivantes: 
+\begin{alltt}
+INFO i = TDS.RechercherGlobalement(nom_fonction)
+  {\bf Si} i = null {\bf alors}
+      Créer une nouvelle INFOFONC, avec la surcharge correspondante aux 
+      paramètres déclarés associée au numéro X0
+  {\bf Sinon}
+      Vérifier que i est bien une INFOFONC
+      Ajouter la surcharge des paramètres déclarés aux autres surcharges,
+      associée à un nouveau numéro
+  {\bf Fin si} 
+\end{alltt}
+
+Ainsi, lors de l'appel, on génère une liste ordonnée de types (correspondante aux paramètres avec lesquels la fonction est appelée), et on la compare avec chacune des surcharges de la fonction (dont l'info est obtenue grâce au nom). \\ 
+Si l'une des surcharges correspond, on appelle la fonction avec cette surcharge.
+
 \section{Génération de code}
 
+La génération de code a été gérée de la même façon qu'en TP, mais quelques ajouts ont été faits.
 
+\subsection{Opérateurs}
+
+Afin de réaliser les différentes opérations, nous avons créé la fonction 
+$GenSubr$ dans l'interface machine. Cette fonction prend un opérateur, et le type sur lequel il est appliqué, et envoie le code généré. \\
+Par exemple, pour l'addition de deux entiers, le résultat sera "tSUBR IAdd ".
+
+\subsection{Appel de fonctions}
+
+Lorsqu'une fonction est appelée, on obtient l'étiquette correspondante à la fonction à appeler en comparant les paramètres d'appels, et les paramètres déclarés, comme expliqué précédemment. 
+L'étiquette est donc unique pour chaque surcharge de la fonction, et on peut ainsi génére le code de l'appel à la fonction avec la méthode \textsl{genCall}.
+
+
+\section*{Conclusion}
 
 
 

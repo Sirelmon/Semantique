@@ -5,7 +5,7 @@
 \BOOKMARK [1][-]{section.0.2}{Pr\351conditions et gestions des erreurs de type}{}% 5
 \BOOKMARK [2][-]{subsection.0.2.1}{Op\351rateurs et compatibilit\351 de types}{section.0.2}% 6
 \BOOKMARK [2][-]{subsection.0.2.2}{Types particuliers}{section.0.2}% 7
-\BOOKMARK [3][-]{section*.3}{Gestion des structs}{subsection.0.2.2}% 8
-\BOOKMARK [3][-]{section*.4}{Gestion des pointeurs}{subsection.0.2.2}% 9
-\BOOKMARK [1][-]{section.0.3}{Fonctions et leurs surcharges}{}% 10
-\BOOKMARK [1][-]{section.0.4}{G\351n\351ration de code}{}% 11
+\BOOKMARK [1][-]{section.0.3}{Fonctions et leurs surcharges}{}% 8
+\BOOKMARK [1][-]{section.0.4}{G\351n\351ration de code}{}% 9
+\BOOKMARK [2][-]{subsection.0.4.1}{Op\351rateurs}{section.0.4}% 10
+\BOOKMARK [2][-]{subsection.0.4.2}{Appel de fonctions}{section.0.4}% 11

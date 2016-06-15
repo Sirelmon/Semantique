@@ -31,6 +31,7 @@ public class OPERATEUR {
 			//OPB neg
 			case 5 :
 				this.typesAdmis.add("int");
+				this.typesAdmis.add("char");
 			//OPB plus
 			case 6 :
 				this.typesAdmis.add("int");
@@ -55,7 +56,7 @@ public class OPERATEUR {
 			//OPB et	
 			case 12 :
 				this.typesAdmis.add("int");
-				this.typesAdmis.add("et");
+				this.typesAdmis.add("bool");
 			//OPB plus
 			case 13 :
 				this.typesAdmis.add("int");
