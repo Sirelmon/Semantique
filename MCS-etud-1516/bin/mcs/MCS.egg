@@ -55,6 +55,11 @@ inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
+syn obj : OBJECT for HERITAGE,DEFS;
+inh hobj : OBJECT for DEFS;
+
+
+
 --inh hnum_surcharge : INTEGER for FONCTION;
 
 --terminals
@@ -1573,39 +1578,110 @@ end
 ----------------- CS extension --------------------
 -- Decommenter les regles suivantes pour l'extension CS
 -------------------------------------------------
---TYPE -> bool;
----- definit un contenu d'un namespace
+STYPE -> bool #type;
+#type {
+do
+    STYPE^type := new DTYPE("void", 0);
+end
+}
+-- definit un contenu d'un namespace
 --ENTITE -> namespace identc aco ENTITES acf ;
----- donne l acces au contenu du 'namespace'
+-- donne l acces au contenu du 'namespace'
 --ENTITE -> using identc IDC pv ;
---IDC -> ;
+IDC -> #obj;
+#obj {
+
+
+}
 --IDC -> pt identc IDC ;
----- definition d'une classe (peut etre en dehors d'un namespace)
---ENTITE -> ACCES class identc HERITAGE aco DEFS acf ;
----- acces 
---ACCES -> public;
+-- definition d'une classe (peut etre en dehors d'un namespace)
+ENTITE -> ACCES class identc #tds HERITAGE #htype aco DEFS acf #type ;
+#tds {
+do 
+    HERITAGE^tds := ENTITE^tds;
+end
+}
+
+
+#htype {
+local
+obj : OBJECT;
+do
+    if (HERITAGE^obj /= nil) then
+        obj := new OBJECT(HERITAGE^obj);
+    else
+        obj := new OBJECT();
+    end
+    DEFS^hobj := obj;  
+end
+}
+
+#type {
+do
+    ENTITE^tds.inserer(identc^txt, DEFS^obj);
+end
+}
+
+
+
+-- acces 
+ACCES -> public;
 --ACCES -> private;
 --ACCES -> ;
----- heritage
---HERITAGE -> ;
---HERITAGE -> dpts identc IDC ;
----- membres d'une classe
---DEFS -> ;
---DEFS ->  ACCES DEF DEFS ;
---DEF  ->  TYPE ident DECL ;
----- constructeur
---DEF  ->  identc paro PARFS parf BASE BLOC;
----- appel eventuel au constructeur de la classe parente.
---BASE -> ;
---BASE -> dpts base paro ES parf  ;
----- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
---PARF ->  MODE TYPE ident ;
+-- heritage
+HERITAGE -> #herit;
+#herit {
+do
+    HERITAGE^obj := nil;
+end
+}
+
+HERITAGE -> dpts identc #hobj IDC #herit  ;
+-- membres d'une classe
+#hobj {
+local
+i : INFO;
+do
+    i := HERITAGE^tds.chercherGlobalement(identc^txt); 
+end
+}
+
+
+#herit {
+local
+i : INFO;
+type : DTYPE;
+do
+    i := IDC^info;
+    match i 
+    with INFOTYPE then
+        
+    HERITAGE^obj := IDC^info.;
+end
+}
+
+DEFS -> #obj ;
+#obj {
+do
+    DEFS^obj := DEFS^hobj;
+end
+}
+
+DEFS ->  ACCES DEF DEFS ;
+DEF  ->  TYPE ident DECL ;
+-- constructeur
+DEF  ->  identc paro PARFS parf BASE BLOC;
+-- appel eventuel au constructeur de la classe parente.
+BASE -> ;
+BASE -> dpts base paro ES parf  ;
+-- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
+PARF ->  MODE TYPE ident ;
 --MODE -> ref ;
 --MODE -> out ; 
---F -> true;
---F -> false;
---F -> this FX;
---F -> base FX;
---F -> null2;
---F -> new identc IDC paro ES parf ;
+F -> true;
+F -> false;
+F -> this FX;
+F -> base FX;
+F -> null2;
+F -> new identc IDC paro ES parf ;
 end
