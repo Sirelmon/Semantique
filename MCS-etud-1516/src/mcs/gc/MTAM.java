@@ -59,6 +59,7 @@ public class MTAM extends AbstractMachine {
 		return "X" + cpt++;
 	}
 
+	
 	// genere le code pour l'arret de la machine
 	public String genFin() {
 		return "\tHALT\n";

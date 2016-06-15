@@ -16,7 +16,7 @@ inh machine : IMachine for
          
          E, AFFX, A, AX, R, RX, T, TX, F,FX
 --         -- decommenter la ligne suivante pour MCS
---       , BASE, DEFS, DEF
+       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
  syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RX,
@@ -45,15 +45,17 @@ syn code_asm : STRING for ASM;
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, RX,F,FX,AX;
+T, TX, ES, ESX, RX,F,FX,AX, DEFS, DEF, HERITAGE, IDC;
 inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
-inh info : INFO for F,FX;
+syn syn_infofon : INFOFON for DECL;
+inh hinfo : INFO for F,FX, IDC;
+syn info : INFO for IDC;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
---inh hnum_surcharge : INTEGER for FONCTION;
+syn infoclass: INFOCLASS for HERITAGE, DEFS, DEF;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -75,21 +77,21 @@ sugar char is  "char";
 sugar struct is "struct";
 sugar typedef is "typedef";
 -- decommenter pour MCS
---sugar ref is "ref" ;
---sugar out is "out";
---sugar namespace is "namespace";
---sugar using is "using";
---sugar class is "class";
---sugar public is "public" ;
---sugar private is "private";
---sugar dpts is "\:";
---sugar bool is "bool";
---sugar true is "true";
---sugar false is "false";
---sugar this is "this";
---sugar new is "new" ;
---sugar null2 is "null";
---sugar base is "base" ;
+sugar ref is "ref" ;
+sugar out is "out";
+sugar namespace is "namespace";
+sugar using is "using";
+sugar class is "class";
+sugar public is "public" ;
+sugar private is "private";
+sugar dpts is "\:";
+sugar bool is "bool";
+sugar true is "true";
+sugar false is "false";
+sugar this is "this";
+sugar new is "new" ;
+sugar null2 is "null";
+sugar base is "base" ;
 -- 
 sugar retour is  "return";
 sugar arrow is "\-\>";
@@ -196,13 +198,19 @@ end
 
 #code {
 local
+i : INFO;
 iv : INFOVAR;
 do
   if ~DECL^est_fonction then
-    iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
-    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
-    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
-    ENTITE^tds.inserer(ident^txt,iv);
+    i := ENTITE^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+      error(B_01, ident^txt);
+    else
+	    iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
+	    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
+	    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+	    ENTITE^tds.inserer(ident^txt,iv);
+    end
   else
     if ENTITE^tds.sansFonction() then
         ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_mainX0") + ENTITE^machine.genFin() + DECL^code;
@@ -215,26 +223,18 @@ end
 -- Variable
 DECL -> pv #def;
 #def{
-local
-i: INFO;
-it:INFOTYPE;
 do
-    i := DECL^tds.chercherGlobalement(DECL^nom);
-    if i /= nil then
-      error(B_01, DECL^nom);
-    else
-       i:=new INFOTYPE(DECL^htype);
-       call DECL^tds.inserer(DECL^nom, i);
-         DECL^est_fonction := false;
-         DECL^code := "";
-    end
+    DECL^est_fonction := false;
+    DECL^code := "";
+    DECL^syn_infofon := nil;
 end
 }
 DECL -> #def FONCTION #fct;
+global
+iff : INFOFONC;
 #def{
 local
 i :INFO;
-iff : INFOFONC;
 m : ArrayList;
 surcharge : SURCHARGE;
 num_surcharge : INTEGER;
@@ -264,9 +264,11 @@ end
 }
 
 #fct {
+
 do
   DECL^est_fonction:=true;
   DECL^code := FONCTION^code;
+  DECL^syn_infofon := iff;
 end
 }
 -- Fonction
@@ -953,7 +955,7 @@ end
 T -> #info  F #hcode TX #code ;
 #info{
 do
- F^info := null;
+ F^hinfo := null;
 end
 }
 #hcode{
@@ -976,7 +978,7 @@ end
 TX ->   OPMUL #info F #htype TX #type ;
 #info{
 do
-   F^info := null;
+   F^hinfo := null;
 end
 }
 
@@ -1215,7 +1217,7 @@ do
     if i = nil then
         error(B_03, ident^txt);
     else
-        FX^info := i;
+        FX^hinfo := i;
         --FX^htype := i.getType();
         match i
         with INFOVAR then
@@ -1349,7 +1351,7 @@ i : INFO;
 iv : INFOVAR;
 tc : DTYPE;
 do
-    i := FX^info;
+    i := FX^hinfo;
     match i 
     with INFOVAR then
         iv := i;
@@ -1407,9 +1409,9 @@ iff :INFOFONC;
 num_surcharge : INTEGER;
 surcharge : SURCHARGE;
 do
-    match FX^info 
+    match FX^hinfo 
       with INFOFONC then
-        iff := FX^info;
+        iff := FX^hinfo;
         num_surcharge := iff.mmParas(ES^paraset);
         if (num_surcharge = -1) then
             surcharge := iff.getSurcharge(0);
@@ -1543,39 +1545,180 @@ end
 ----------------- CS extension --------------------
 -- Decommenter les regles suivantes pour l'extension CS
 -------------------------------------------------
---TYPE -> bool;
----- definit un contenu d'un namespace
---ENTITE -> namespace identc aco ENTITES acf ;
----- donne l acces au contenu du 'namespace'
+STYPE -> bool #type;
+#type{
+do
+       STYPE^type := new DTYPE("bool", 1);
+end
+}
+-- definit un contenu d'un namespace
+--ENTITE -> namespace identc #tds aco ENTITES acf #code ;
+--#tds{
+--local
+--tds : TDS;
+--in : INFONAMESPACE;
+--i : INFO;
+--do
+--    i := ENTITE^tds.chercherLocalement(identc^txt);
+--    if i /= nil then
+--        error(B_21, identc^txt);
+--    else
+--	    tds := new TDS(ENTITE^tds);
+--	    in := new INFONAMESPACE(tds);
+--	    ENTITE^tds.inserer(identc^txt, in);
+--	    ENTITES^tds := tds;
+--    end
+--end
+--}
+--#code{
+--do
+--    ENTITE^code := ENTITES^code;
+--    ENTITE^dep := ENTITES^dep;
+--end
+--}
+-- donne l acces au contenu du 'namespace'
 --ENTITE -> using identc IDC pv ;
---IDC -> ;
---IDC -> pt identc IDC ;
----- definition d'une classe (peut etre en dehors d'un namespace)
---ENTITE -> ACCES class identc HERITAGE aco DEFS acf ;
----- acces 
---ACCES -> public;
+IDC -> #info ;
+#info{
+do
+    IDC^info := IDC^hinfo;
+end
+}
+IDC -> pt identc #hinfo IDC #info;
+#hinfo{
+local
+i : INFO;
+do
+    i := IDC^tds.chercherGlobalement(identc^txt);
+    if i=nil then
+        error(B_18, identc^txt);
+    else
+        match i
+        with INFONAMESPACE then
+            IDC1^hinfo := i;
+        else match i
+            with INFOCLASS then
+                IDC1^hinfo := i;
+            else
+                error (B_19, identc^txt);
+            end
+        end
+    end
+end
+}
+#info{
+do
+    IDC^info := IDC1^info;
+end
+}
+-- definition d'une classe (peut etre en dehors d'un namespace)
+ENTITE -> ACCES class identc HERITAGE #tds aco DEFS acf ;
+#tds{
+local
+i : INFO;
+ic : INFOCLASS;
+tds : TDS;
+do
+    tds := new TDS(ENTITE^tds);
+    i := ENTITE^tds.chercheGlobalement(identc^txt);
+    if i /= nil then
+        error(B_17, identc^txt);
+    else
+        ic := new INFOCLASS(tds, identc^txt, HERITAGE^infoclass);
+        ENTITE^tds.inserer(ic);
+        DEFS^tds := tds;
+    end
+end
+}
+-- acces 
+ACCES -> public;
 --ACCES -> private;
 --ACCES -> ;
----- heritage
---HERITAGE -> ;
---HERITAGE -> dpts identc IDC ;
----- membres d'une classe
---DEFS -> ;
---DEFS ->  ACCES DEF DEFS ;
---DEF  ->  TYPE ident DECL ;
----- constructeur
---DEF  ->  identc paro PARFS parf BASE BLOC;
----- appel eventuel au constructeur de la classe parente.
---BASE -> ;
---BASE -> dpts base paro ES parf  ;
----- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
---PARF ->  MODE TYPE ident ;
+-- heritage
+HERITAGE -> #infoclass ;
+#infoclass{
+do
+    HERITAGE^infoclass := nil;
+end
+}
+HERITAGE -> dpts identc #hinfo IDC #infoclass ;
+#hinfo{
+local
+i : INFO;
+do
+    i := HERITAGE^tds.chercherGlobalement(identc^txt);
+    if i=nil then
+        error(B_18, identc^txt);
+    else
+        match i
+        with INFONAMESPACE then
+            IDC^hinfo := i;
+        else match i
+            with INFOCLASS then
+                IDC^hinfo := i;
+            else
+                error (B_19, identc^txt);
+            end
+        end
+    end
+end
+}
+#infoclass {
+local
+i : INFO;
+do
+    i := IDC^info;
+    match i
+    with INFOCLASS then
+        HERITAGE^infoclass := i;
+    else
+        error(B_20, identc^txt);
+    end
+end
+}
+-- membres d'une classe
+DEFS -> ;
+DEFS ->  ACCES DEF DEFS ;
+DEF  ->  TYPE ident #htype DECL #tds;
+#htype{
+local
+do
+    DECL^nom := ident^txt;
+    DECL^htype := TYPE^type;
+end
+}
+#tds{
+local
+i : INFO;
+iv : INFOVAR;
+lc : LCHAMPS;
+do
+    if ~DECL^est_fonction then
+        lc := DEF^infoclass.getAttributs();
+	    if lc.chercher(ident^txt) then 
+		    error(B_21,ident^txt);
+		else
+	        DEF^infoclass.addAttribut(ident^txt, TYPE^type);
+        end
+    else
+        DEF^infoclass.addMethod(ident^txt, DECL^syn_infofon);
+    end     
+end
+}
+-- constructeur
+DEF  ->  identc paro PARFS parf BASE BLOC;
+-- appel eventuel au constructeur de la classe parente.
+BASE -> ;
+BASE -> dpts base paro ES parf  ;
+-- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
+PARF ->  MODE TYPE ident ;
+MODE -> ;
 --MODE -> ref ;
 --MODE -> out ; 
---F -> true;
---F -> false;
---F -> this FX;
---F -> base FX;
---F -> null2;
---F -> new identc IDC paro ES parf ;
+F -> true;
+F -> false;
+F -> this FX;
+F -> base FX;
+F -> null2;
+F -> new identc IDC paro ES parf ;
 end

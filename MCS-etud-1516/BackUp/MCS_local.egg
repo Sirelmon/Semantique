@@ -46,13 +46,14 @@ inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
 T, TX, ES, ESX, RX,F,FX,AX;
-inh nom : STRING for DECL, AFFX;
+inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
+--inh hnum_surcharge : INTEGER for FONCTION;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -130,8 +131,8 @@ do
    else
      ENTITES^machine := machine;
      ENTITES^tds:= new TDS();
-     ENTITES^hdep:=3;
-     ENTITES^hcode := machine.genCall("_main") + machine.genFin();
+     ENTITES^hdep:=0;
+     ENTITES^hcode := "";
    end
 end
 }
@@ -173,7 +174,7 @@ local
 do
     i := ENTITE^tds.chercherGlobalement(identc^txt);
     if i /= nil then
-       error(B_00, " 170");
+       error(B_00, identc^txt);
     else    
       -- creer un type
      i := new INFOTYPE(TYPE^type);
@@ -197,12 +198,17 @@ end
 local
 iv : INFOVAR;
 do
-  if !DECL^est_fonction then
+  if ~DECL^est_fonction then
     iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
-    ENTITE^dep := ENTITE^hdep+1;
-    ENTITE^code := ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
+    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+    ENTITE^tds.inserer(ident^txt,iv);
   else
-    ENTITE^code := ENTITE^hcode + DECL^code;
+    if ENTITE^tds.sansFonction() then
+        ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_mainX0") + ENTITE^machine.genFin() + DECL^code;
+    else
+        ENTITE^code := ENTITE^hcode + DECL^code;
+    end
   end
 end
 }
@@ -215,7 +221,7 @@ it:INFOTYPE;
 do
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
-      error(B_01, " 212");
+      error(B_01, DECL^nom);
     else
        i:=new INFOTYPE(DECL^htype);
        call DECL^tds.inserer(DECL^nom, i);
@@ -229,22 +235,36 @@ DECL -> #def FONCTION #fct;
 local
 i :INFO;
 iff : INFOFONC;
-m :LinkedHashMap;
+m : ArrayList;
+surcharge : SURCHARGE;
+num_surcharge : INTEGER;
 do
-    m := new LinkedHashMap();
+    m := new ArrayList();
     i := DECL^tds.chercherGlobalement(DECL^nom);
     if i /= nil then
-      error(B_02, " 231");
+      match i
+      with INFOFONC then
+        iff := i;
+--        num_surcharge := iff.addSurcharge(DECL^nom);
+        FONCTION^infofon := iff;
+--        FONCTION^hnum_surcharge := num_surcharge;
+      else
+        error(B_16, DECL^nom);
+      end
     else
        FONCTION^htype := DECL^htype;
-       iff := new INFOFONC(DECL^nom, DECL^htype,m,DECL^tds);
+--       surcharge := new SURCHARGE(new LinkedHashMap(), DECL^nom + "X0");
+--       m.add(surcharge);
+       iff := new INFOFONC(DECL^htype,m,DECL^tds);
        FONCTION^infofon:= iff;
+--       FONCTION^hnum_surcharge := 0;
        call DECL^tds.inserer(DECL^nom, iff);
     end
 end
 }
 
 #fct {
+
 do
   DECL^est_fonction:=true;
   DECL^code := FONCTION^code;
@@ -252,6 +272,9 @@ end
 }
 -- Fonction
 FONCTION ->    paro #tds PARFS parf #info BLOC #code ;
+global
+s : SURCHARGE;
+num_surcharge : INTEGER;
 #tds{
 local
 t: TDS;
@@ -273,11 +296,18 @@ local
 t : TDS;
 m : LinkedHashMap;
 do
-    m:=FONCTION^infofon.getParas();
-    
-    m.putAll(PARFS^para);
-    BLOC^infofon := FONCTION^infofon;
-    BLOC^hdep := 3;
+
+    --penser à surcharge la méthode mmParas pour gérer les LinkedHashMap en paramètre
+    if (FONCTION^infofon.mmParas(PARFS^para) /= -1) then
+        error(B_02, FONCTION^nom);
+    else
+        num_surcharge := FONCTION^infofon.addSurcharge(FONCTION^nom);
+        s:=FONCTION^infofon.getSurcharge(num_surcharge);
+        m := s.getParas();
+        m.putAll(PARFS^para);
+        BLOC^infofon := FONCTION^infofon;
+        BLOC^hdep := 3;
+    end
 end
 }
 
@@ -286,9 +316,9 @@ local
 t : DTYPE;
 tailleparas : INTEGER;
 do
-  tailleparas := FONCTION^infofon.getTailleParas();
+  tailleparas := s.getTailleParas();
   t := FONCTION^infofon.getRtype();
-  FONCTION^code := FONCTION^machine.genFonction(FONCTION^infofon.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
+  FONCTION^code := FONCTION^machine.genFonction(s.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
 end
 }
 
@@ -432,15 +462,15 @@ STYPE -> identc #type;
  do
     -- rechercher l'ident   
     i := STYPE^tds.chercherGlobalement(identc^txt);
-    if i = null then
-      error(B_03, " 415");
+    if i = nil then
+      error(B_03, identc^txt);
     else
        match i
        with INFOTYPE then
          it := i ;
          STYPE^type :=  it.getType();
        else
-          error(B_04, " 422");
+          error(B_04, identc^txt);
        end
     end
   end
@@ -473,7 +503,7 @@ CHAMPS -> CHAMP #ch CHAMPS ;
  do
   c := CHAMPS^champs.chercher(CHAMP^hnom);
     if c /= nil then
-       error(B_05, " 455");
+       error(B_05, CHAMP^hnom);
     else    
       c := new CHAMP(CHAMP^hnom, CHAMP^type, CHAMPS^hdep);
      call CHAMPS^champs.inserer(c);
@@ -562,7 +592,7 @@ do
  i:= INST^tds.chercherGlobalement(ident^txt);
  if i /= null then error (B_06, " 528");
  else 
-    e := new Emplacement(INST^hdep,new Register("SB",0));
+    e := new Emplacement(INST^hdep,new Register("LB",0));
     iv:= new INFOVAR(TYPE^type,e);
     AFFX^hadresse := e;
     INST^tds.inserer(ident^txt,iv);
@@ -669,7 +699,7 @@ t: DTYPE;
 do
     t := INST^infofon.getRtype();
     if ~(t.compareTo(E^type)) then 
-         error(B_07, " 618" + " mauvais type de retour"+ INST^infofon.getEtiq());
+         error(B_06,INST^infofon.getEtiq());
        end
 end
 }
@@ -708,7 +738,7 @@ local
 s: ArrayList;
 do
  if ~(A^type.compareTo(AFFX^type)) then 
-  error (B_08, " 654" + " mauvais type " + A^type.getNom() + " " + AFFX^type.getNom());
+  error (B_15, A^type.getNom(),AFFX^type.getNom());
  end
  E^type:= A^type;
  E^code := AFFX^code;
@@ -722,7 +752,7 @@ do
       AFFX^type := A^type;
   if (AFFX^hadresse /= nil) then
     AFFX^code :=  AFFX^hcode + A^code
-                  + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille());
+                  + AFFX^machine.genWriteMem(AFFX^hadresse.getDep(),A^type.getTaille(),AFFX^hadresse.getReg());
   else
     AFFX^code := A^code + AFFX^hcode + AFFX^machine.genWriteIndirectMem(A^type.getTaille());
   end
@@ -863,7 +893,7 @@ RX ->   OPADD  T #htype RX #type ;
 #htype{
 do
     if(~T^type.compareTo(RX^htype) || ~RX^htype.OpCompat(OPADD^op))
-        then error(B_10, " 803");
+        then error(B_07,T^type,RX^htype,"+");
     else
         RX1^htype := RX^htype; 
         RX1^hcode := RX^hcode + T^code + RX^machine.genSubr(OPADD^op, T^type);
@@ -954,7 +984,7 @@ end
 #htype{
 do
     if(~F^type.compareTo(TX^htype) || ~TX^htype.OpCompat(OPMUL^op))
-        then error(B_11," 889");
+        then error(B_07,F^type,TX^htype,"*");
     else
         TX1^htype := TX^htype; 
         TX1^hcode := TX^hcode + F^code + TX^machine.genSubr(OPMUL^op, F^type);
@@ -1161,7 +1191,7 @@ do
             F^code_est_adresse := false;
         end
     else
-        error(B_13, " 1087");
+        error(B_08,F1^type);
     end
     if F^gauche_affect then
         F^code := F1^code;
@@ -1184,7 +1214,7 @@ eti : String;
 do
     i := F^tds.chercherGlobalement(ident^txt);
     if i = nil then
-        error(B_14," 1105" + ident^txt);
+        error(B_03, ident^txt);
     else
         FX^info := i;
         --FX^htype := i.getType();
@@ -1198,20 +1228,20 @@ do
             match t
             with STRUCT then
                 if ~F^gauche_affect then
-                    FX^hcode := F^machine.genAdr(e.getDep());
+                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
                 else
                     FX^hcode := "";
                 end
                 FX^hcode_est_adresse := false;
             else match t
             with POINTEUR then
-                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
                 FX^hcode_est_adresse := true;
             else
                 if F^gauche_affect then
                     FX^hcode := F^machine.genComment("gauche_affect");
                 else
-                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille());
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
                 end
                 FX^hcode_est_adresse := false;
             end
@@ -1221,19 +1251,14 @@ do
         else match i
         with INFOFONC then
             i_f := i;
-            eti := i_f.getEtiq();
             FX^htype := i_f.getRtype();
-            if (eti = nil) then
-                error (b_155, "fonction sans etiquette");
-            else
-                FX^hcode := F^machine.genCall("_" + eti) + F^machine.genComment("appel de fonction");
+                FX^hcode := "";
                 FX^hcode_est_adresse := false;
-            end
-    else
+        else
             
-        error(B_16, " 1136" + ident^txt);
-    end
-    end
+            error(B_09,ident^txt);
+        end
+        end
     end
 end
 }
@@ -1250,9 +1275,9 @@ end
 FX -> #type ;
 #type{
 do
-		FX^type := FX^htype;
-		FX^code:=FX^hcode;
-		FX^code_est_adresse := FX^hcode_est_adresse;
+        FX^type := FX^htype;
+        FX^code:=FX^hcode;
+        FX^code_est_adresse := FX^hcode_est_adresse;
         FX^adresse := FX^hadresse;
 end
 }
@@ -1272,32 +1297,32 @@ local
 do
     t := FX^htype;
         match t
-		  with STRUCT then
-		    s := t;
-		    lc := s.getChamps();
-		    c := lc.chercher(ident^txt);
-		    if c = nil then
-		      error(B_18, " 1194") ;
-		    else
+          with STRUCT then
+            s := t;
+            lc := s.getChamps();
+            c := lc.chercher(ident^txt);
+            if c = nil then
+              error(B_10,ident^txt, t.getNom());
+            else
               if (FX^hadresse /= nil) then
                 FX1^hadresse := new Emplacement(FX^hadresse.getDep() + c.getDep(), FX^hadresse.getReg());
               end
-		      FX1^htype := c.getType();
-		    tident := c.getType();
-		    if (FX^gauche_affect) then
+              FX1^htype := c.getType();
+            tident := c.getType();
+            if (FX^gauche_affect) then
                 if (FX^hcode_est_adresse) then
                   FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
                 else
-		          FX1^hcode := FX^hcode;
+                  FX1^hcode := FX^hcode;
                 end
-		    else
-		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
-		    end
-		    
-		    end    
-		  else
-		    error(B_19, " 1206"); 
-		  end
+            else
+                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+            end
+            
+            end    
+          else
+            error(B_11,t.getNom()); 
+          end
 end
 }
 
@@ -1330,36 +1355,36 @@ do
     with INFOVAR then
         iv := i;
         t := iv.getType();
-	    match t
-	    with POINTEUR then
-	        p := t;
-	        tp := p.getTypeP();
+        match t
+        with POINTEUR then
+            p := t;
+            tp := p.getTypeP();
             FX1^htype := tp;
-	        match tp with STRUCT then 
-	            s := tp;
-	            lc := s.getChamps();
-	            c := lc.chercher(ident^txt);
-	            if c = nil then
-	                error(B_21, " 1251") ;
-	            else
-	                FX1^htype := c.getType();
+            match tp with STRUCT then 
+                s := tp;
+                lc := s.getChamps();
+                c := lc.chercher(ident^txt);
+                if c = nil then
+                    error(B_10, ident^txt,tp.getNom()) ;
+                else
+                    FX1^htype := c.getType();
                     FX1^hadresse := nil;
                     if FX^gauche_affect then
-	                   FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+                       FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
                     else
                        tc := c.getType();
                        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tc.getTaille());
                     end
-	            end
-	        else
-	            error(B_22, " 1257");
-	        end
-	    
-	    else
-	        error(B_23, " 1261");
-	    end
+                end
+            else
+                error(B_11, tp.getNom());
+            end
+        
+        else
+            error(B_08, t.getNom());
+        end
     else
-        error(B_24," 1264");
+        error(B_12);
     end       
 end
 }
@@ -1380,16 +1405,22 @@ FX ->   paro ES parf #htype FX #type;
 #htype{
 local
 iff :INFOFONC;
-
+num_surcharge : INTEGER;
+surcharge : SURCHARGE;
 do
     match FX^info 
       with INFOFONC then
         iff := FX^info;
-        if ~(iff.mmPara(ES^paraset)) then
-            error(B_24," 1291" + " parametres pas egaux");
+        num_surcharge := iff.mmParas(ES^paraset);
+        if (num_surcharge = -1) then
+            surcharge := iff.getSurcharge(0);
+            error(B_13,iff.getEtiq());
+        else
+            surcharge := iff.getSurcharge(num_surcharge);
+            FX1^hcode := ES^code + FX^machine.genCall(surcharge.getEtiq()) + FX^machine.genComment("appel de fonction");
         end
-        FX1^hcode := ES^code + FX^hcode;
-      else error(B_25," 1294" + "ce n'est pas une fonction");  
+      else 
+        error(B_14);  
     end
 end
 }
