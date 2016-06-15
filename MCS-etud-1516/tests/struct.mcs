@@ -1,0 +1,23 @@
+typedef struct {
+	char instrument;
+	int auteur;
+} Beatle;
+
+typedef struct {
+	Beatle john;
+	Beatle paul;
+	Beatle ringo;
+	Beatle george;
+} Chanson;
+
+Chanson lucy;
+
+void main() {
+	lucy.john.auteur = 1;
+	lucy.paul.auteur = lucy.john.auteur;
+	lucy.john.instrument = 'g';
+	lucy.paul.instrument = 'o';
+	lucy.george.instrument = lucy.john.instrument;
+	lucy.ringo.instrument = 'b';
+}
+	

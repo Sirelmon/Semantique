@@ -1,0 +1,27 @@
+typedef struct {
+	char id;
+	int x;
+	int y;
+} PointNomme;
+
+int malloc(int taille){
+  int adr;
+  asm {
+    LOAD %taille    ; acces au parametre taille
+    SUBR Malloc     ; allocation
+    STORE %adr      ; resultat dans adr
+  }
+  return adr;
+}
+
+void main() {
+	PointNomme * p = malloc(3);
+	(*p).id = 't';
+	p->id = 'i';
+	(*p).x = 3;
+	p->x = 1;
+	p->y = 2;
+	PointNomme ** q = malloc(1);
+	*q = p;
+	(**q).y = 4;
+}

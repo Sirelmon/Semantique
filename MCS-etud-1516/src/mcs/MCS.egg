@@ -16,7 +16,7 @@ inh machine : IMachine for
          
          E, AFFX, A, AX, R, RX, T, TX, F,FX
 --         -- decommenter la ligne suivante pour MCS
-       , BASE, DEFS, DEF
+--       , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
  syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RX,
@@ -28,8 +28,10 @@ inh machine : IMachine for
          E, AFFX, A, AX, R, RX, T, TX, F,FX;
  inh hcode: STRING for ENTITES, ENTITE, RX,TX,FX,AFFX,AX,ESX;
  syn est_fonction : BOOLEAN for DECL;
- syn code_est_adresse : BOOLEAN for F, FX;
+ inh hest_fonction : BOOLEAN for BLOC;
+ syn code_est_adresse : BOOLEAN for E, A, R, T, F, FX;
  inh hcode_est_adresse : BOOLEAN for FX;
+ syn etoile : BOOLEAN for F;
  syn adresse : Emplacement for A,AX,R,RX,T,TX,F,FX;
  inh hadresse : Emplacement for AFFX,AX,RX,TX,FX;
  inh gauche_affect : BOOLEAN for E, AFFX,A,AX,R,RX,T,TX,F,FX;
@@ -45,17 +47,15 @@ syn code_asm : STRING for ASM;
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, RX,F,FX,AX, DEFS, DEF, HERITAGE, IDC;
+T, TX, ES, ESX, RX,F,FX,AX;
 inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
-syn syn_infofon : INFOFON for DECL;
-inh hinfo : INFO for F,FX, IDC;
-syn info : INFO for IDC;
+inh info : INFO for F,FX;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
-syn infoclass: INFOCLASS for HERITAGE, DEFS, DEF;
+--inh hnum_surcharge : INTEGER for FONCTION;
 
 --terminals
 space separateur is  "[\r\n\t ]+";     
@@ -77,21 +77,21 @@ sugar char is  "char";
 sugar struct is "struct";
 sugar typedef is "typedef";
 -- decommenter pour MCS
-sugar ref is "ref" ;
-sugar out is "out";
-sugar namespace is "namespace";
-sugar using is "using";
-sugar class is "class";
-sugar public is "public" ;
-sugar private is "private";
-sugar dpts is "\:";
-sugar bool is "bool";
-sugar true is "true";
-sugar false is "false";
-sugar this is "this";
-sugar new is "new" ;
-sugar null2 is "null";
-sugar base is "base" ;
+--sugar ref is "ref" ;
+--sugar out is "out";
+--sugar namespace is "namespace";
+--sugar using is "using";
+--sugar class is "class";
+--sugar public is "public" ;
+--sugar private is "private";
+--sugar dpts is "\:";
+--sugar bool is "bool";
+--sugar true is "true";
+--sugar false is "false";
+--sugar this is "this";
+--sugar new is "new" ;
+--sugar null2 is "null";
+--sugar base is "base" ;
 -- 
 sugar retour is  "return";
 sugar arrow is "\-\>";
@@ -198,19 +198,13 @@ end
 
 #code {
 local
-i : INFO;
 iv : INFOVAR;
 do
   if ~DECL^est_fonction then
-    i := ENTITE^tds.chercherGlobalement(ident^txt);
-    if i /= nil then
-      error(B_01, ident^txt);
-    else
-	    iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
-	    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
-	    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
-	    ENTITE^tds.inserer(ident^txt,iv);
-    end
+    iv := new INFOVAR(TYPE^type, new Emplacement(ENTITE^hdep,new Register("SB",0)));
+    ENTITE^dep := ENTITE^hdep+TYPE^type.getTaille();
+    ENTITE^code := ENTITE^hcode + ENTITE^machine.genDecl(ident^txt, iv, ENTITE^machine.genPush(iv.getType()));
+    ENTITE^tds.inserer(ident^txt,iv);
   else
     if ENTITE^tds.sansFonction() then
         ENTITE^code := ENTITE^hcode + ENTITE^machine.genCall("_mainX0") + ENTITE^machine.genFin() + DECL^code;
@@ -223,18 +217,26 @@ end
 -- Variable
 DECL -> pv #def;
 #def{
+local
+i: INFO;
+it:INFOTYPE;
 do
-    DECL^est_fonction := false;
-    DECL^code := "";
-    DECL^syn_infofon := nil;
+    i := DECL^tds.chercherGlobalement(DECL^nom);
+    if i /= nil then
+      error(B_01, DECL^nom);
+    else
+       i:=new INFOTYPE(DECL^htype);
+       call DECL^tds.inserer(DECL^nom, i);
+         DECL^est_fonction := false;
+         DECL^code := "";
+    end
 end
 }
 DECL -> #def FONCTION #fct;
-global
-iff : INFOFONC;
 #def{
 local
 i :INFO;
+iff : INFOFONC;
 m : ArrayList;
 surcharge : SURCHARGE;
 num_surcharge : INTEGER;
@@ -268,7 +270,6 @@ end
 do
   DECL^est_fonction:=true;
   DECL^code := FONCTION^code;
-  DECL^syn_infofon := iff;
 end
 }
 -- Fonction
@@ -308,6 +309,8 @@ do
         m.putAll(PARFS^para);
         BLOC^infofon := FONCTION^infofon;
         BLOC^hdep := 3;
+        --Pour éviter de POP à la fin d'un BLOC de FONCTION
+        BLOC^hest_fonction := true;
     end
 end
 }
@@ -535,7 +538,11 @@ end
 
 #gen {
 do
-    BLOC^code := INSTS^code+BLOC^machine.genFree(t.getTailleLocales());
+    if BLOC^hest_fonction then
+        BLOC^code := INSTS^code;
+    else
+        BLOC^code := INSTS^code+BLOC^machine.genFree(t.getTailleLocales());
+    end
     BLOC^dep := INSTS^dep;
 end
 }
@@ -591,7 +598,7 @@ iv: INFOVAR;
 e : Emplacement;
 do
  i:= INST^tds.chercherGlobalement(ident^txt);
- if i /= null then error (B_06, " 528");
+ if i /= null then error (B_01, ident^txt);
  else 
     e := new Emplacement(INST^hdep,new Register("LB",0));
     iv:= new INFOVAR(TYPE^type,e);
@@ -631,6 +638,7 @@ t :TDS;
 do
     t := new TDS(INST^tds);
     BLOC^tds := t;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -653,6 +661,7 @@ end
 do
     tds := new TDS(INST^tds);
     BLOC^tds := tds;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -670,6 +679,7 @@ t :TDS;
 do
     t := new TDS(SIX^tds);
     BLOC^tds := t;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -743,7 +753,7 @@ do
  end
  E^type:= A^type;
  E^code := AFFX^code;
-
+ E^code_est_adresse := A^code_est_adresse;
 end
 }
 -- affectation
@@ -785,6 +795,7 @@ do
   A^type:= AX^type;
   A^code := AX^code;
   A^adresse := AX^adresse;
+  A^code_est_adresse := R^code_est_adresse;
 end
 }
 
@@ -886,6 +897,7 @@ do
     R^type := RX^type;
     R^code := RX^code;
     R^adresse := RX^adresse;
+    R^code_est_adresse := T^code_est_adresse; 
 end
 }
 
@@ -955,7 +967,7 @@ end
 T -> #info  F #hcode TX #code ;
 #info{
 do
- F^hinfo := null;
+ F^info := null;
 end
 }
 #hcode{
@@ -973,12 +985,13 @@ do
     T^type := TX^type;
     T^code := TX^code;
     T^adresse := TX^adresse;
+    T^code_est_adresse := F^code_est_adresse;
 end
 }
 TX ->   OPMUL #info F #htype TX #type ;
 #info{
 do
-   F^hinfo := null;
+   F^info := null;
 end
 }
 
@@ -1064,6 +1077,7 @@ do
     F^code_est_adresse := false;
     F^code := F^machine.genCst(entier^txt);
     F^adresse := nil;
+    F^etoile:=false;
 end
 }
 -- Constante chaine
@@ -1083,6 +1097,7 @@ do
        F^code_est_adresse := false;
        F^code := F^machine.genCst(caractere^txt);
        F^adresse := nil;
+       F^etoile := false;
 end
 }
 -- expression unaire
@@ -1097,6 +1112,7 @@ do
     F^code := F1^code + F^machine.genSubr(OPUN^op, F1^type);
     F^code_est_adresse := F1^code_est_adresse;
     F^adresse := nil;
+    F^etoile := F1^etoile;
    end
 
 end
@@ -1142,6 +1158,7 @@ do
    F^code := F^machine.genNull();
    F^code_est_adresse := true;
    F^adresse := nil;
+   F^etoile := false;
 end
 }
 -- expression parenthesee
@@ -1151,7 +1168,7 @@ local
 do
     FX^htype := E^type;
     FX^hcode := E^code;
-    FX^hcode_est_adresse := false;
+    FX^hcode_est_adresse := E^code_est_adresse;
     FX^hadresse := nil;
 end
 }
@@ -1161,6 +1178,7 @@ do
     F^code := FX^code;
     F^code_est_adresse := FX^code_est_adresse;
     F^adresse := nil;
+    F^etoile := false;
 end
 }
 
@@ -1171,6 +1189,7 @@ do
     F^code := F1^code;
     F^code_est_adresse := F1^code_est_adresse;
     F^adresse := nil;
+    F^etoile := F1^etoile;
 end
 }
 
@@ -1185,21 +1204,26 @@ do
     with POINTEUR then
         tp := t.getTypeP();
         F^type := tp;
-        match tp
-        with POINTEUR then
+--        match tp
+--        with POINTEUR then
             F^code_est_adresse := true;
-        else
-            F^code_est_adresse := false;
-        end
+--        else
+--            F^code_est_adresse := false;
+--        end
     else
         error(B_08,F1^type);
     end
-    if F^gauche_affect then
-        F^code := F1^code;
-    else
+    if F1^etoile then
         F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+    else
+	    if F^gauche_affect then
+	        F^code := F1^code;
+	    else
+	        F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+	    end
     end
     F^adresse := nil;
+    F^etoile := true;
 end
 }
 -- donner les infos a FX
@@ -1217,7 +1241,7 @@ do
     if i = nil then
         error(B_03, ident^txt);
     else
-        FX^hinfo := i;
+        FX^info := i;
         --FX^htype := i.getType();
         match i
         with INFOVAR then
@@ -1229,7 +1253,8 @@ do
             match t
             with STRUCT then
                 if ~F^gauche_affect then
-                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
+--                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
                 else
                     FX^hcode := "";
                 end
@@ -1270,15 +1295,16 @@ do
     F^code := FX^code;
     F^code_est_adresse := FX^code_est_adresse;
     F^adresse := FX^adresse;
+    F^etoile := false;
 end
 }
 
 FX -> #type ;
 #type{
 do
-		FX^type := FX^htype;
-		FX^code:=FX^hcode;
-		FX^code_est_adresse := FX^hcode_est_adresse;
+        FX^type := FX^htype;
+        FX^code:=FX^hcode;
+        FX^code_est_adresse := FX^hcode_est_adresse;
         FX^adresse := FX^hadresse;
 end
 }
@@ -1295,35 +1321,37 @@ local
  lc : LCHAMPS;
  i : INFO;
  iv : INFOVAR;
+ e : Emplacement;
 do
     t := FX^htype;
         match t
-		  with STRUCT then
-		    s := t;
-		    lc := s.getChamps();
-		    c := lc.chercher(ident^txt);
-		    if c = nil then
-		      error(B_10,ident^txt, t.getNom());
-		    else
+          with STRUCT then
+            s := t;
+            lc := s.getChamps();
+            c := lc.chercher(ident^txt);
+            if c = nil then
+              error(B_10,ident^txt, t.getNom());
+            else
               if (FX^hadresse /= nil) then
                 FX1^hadresse := new Emplacement(FX^hadresse.getDep() + c.getDep(), FX^hadresse.getReg());
               end
-		      FX1^htype := c.getType();
-		    tident := c.getType();
-		    if (FX^gauche_affect) then
+              FX1^htype := c.getType();
+            tident := c.getType();
+            if (FX^gauche_affect) then
                 if (FX^hcode_est_adresse) then
                   FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
                 else
-		          FX1^hcode := FX^hcode;
+                  FX1^hcode := FX^hcode;
                 end
-		    else
-		        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
-		    end
-		    
-		    end    
-		  else
-		    error(B_11,t.getNom()); 
-		  end
+            else
+                e := FX^hadresse;
+                FX1^hcode := FX^machine.genAdr(e.getDep(), e.getReg()) + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+            end
+            
+            end    
+          else
+            error(B_11,t.getNom()); 
+          end
 end
 }
 
@@ -1351,39 +1379,39 @@ i : INFO;
 iv : INFOVAR;
 tc : DTYPE;
 do
-    i := FX^hinfo;
+    i := FX^info;
     match i 
     with INFOVAR then
         iv := i;
         t := iv.getType();
-	    match t
-	    with POINTEUR then
-	        p := t;
-	        tp := p.getTypeP();
+        match t
+        with POINTEUR then
+            p := t;
+            tp := p.getTypeP();
             FX1^htype := tp;
-	        match tp with STRUCT then 
-	            s := tp;
-	            lc := s.getChamps();
-	            c := lc.chercher(ident^txt);
-	            if c = nil then
-	                error(B_10, ident^txt,tp.getNom()) ;
-	            else
-	                FX1^htype := c.getType();
+            match tp with STRUCT then 
+                s := tp;
+                lc := s.getChamps();
+                c := lc.chercher(ident^txt);
+                if c = nil then
+                    error(B_10, ident^txt,tp.getNom()) ;
+                else
+                    FX1^htype := c.getType();
                     FX1^hadresse := nil;
                     if FX^gauche_affect then
-	                   FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
+                       FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep());
                     else
                        tc := c.getType();
                        FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tc.getTaille());
                     end
-	            end
-	        else
-	            error(B_11, tp.getNom());
-	        end
-	    
-	    else
-	        error(B_08, t.getNom());
-	    end
+                end
+            else
+                error(B_11, tp.getNom());
+            end
+        
+        else
+            error(B_08, t.getNom());
+        end
     else
         error(B_12);
     end       
@@ -1409,9 +1437,9 @@ iff :INFOFONC;
 num_surcharge : INTEGER;
 surcharge : SURCHARGE;
 do
-    match FX^hinfo 
+    match FX^info 
       with INFOFONC then
-        iff := FX^hinfo;
+        iff := FX^info;
         num_surcharge := iff.mmParas(ES^paraset);
         if (num_surcharge = -1) then
             surcharge := iff.getSurcharge(0);
@@ -1545,180 +1573,39 @@ end
 ----------------- CS extension --------------------
 -- Decommenter les regles suivantes pour l'extension CS
 -------------------------------------------------
-STYPE -> bool #type;
-#type{
-do
-       STYPE^type := new DTYPE("bool", 1);
-end
-}
--- definit un contenu d'un namespace
---ENTITE -> namespace identc #tds aco ENTITES acf #code ;
---#tds{
---local
---tds : TDS;
---in : INFONAMESPACE;
---i : INFO;
---do
---    i := ENTITE^tds.chercherLocalement(identc^txt);
---    if i /= nil then
---        error(B_21, identc^txt);
---    else
---	    tds := new TDS(ENTITE^tds);
---	    in := new INFONAMESPACE(tds);
---	    ENTITE^tds.inserer(identc^txt, in);
---	    ENTITES^tds := tds;
---    end
---end
---}
---#code{
---do
---    ENTITE^code := ENTITES^code;
---    ENTITE^dep := ENTITES^dep;
---end
---}
--- donne l acces au contenu du 'namespace'
+--TYPE -> bool;
+---- definit un contenu d'un namespace
+--ENTITE -> namespace identc aco ENTITES acf ;
+---- donne l acces au contenu du 'namespace'
 --ENTITE -> using identc IDC pv ;
-IDC -> #info ;
-#info{
-do
-    IDC^info := IDC^hinfo;
-end
-}
-IDC -> pt identc #hinfo IDC #info;
-#hinfo{
-local
-i : INFO;
-do
-    i := IDC^tds.chercherGlobalement(identc^txt);
-    if i=nil then
-        error(B_18, identc^txt);
-    else
-        match i
-        with INFONAMESPACE then
-            IDC1^hinfo := i;
-        else match i
-            with INFOCLASS then
-                IDC1^hinfo := i;
-            else
-                error (B_19, identc^txt);
-            end
-        end
-    end
-end
-}
-#info{
-do
-    IDC^info := IDC1^info;
-end
-}
--- definition d'une classe (peut etre en dehors d'un namespace)
-ENTITE -> ACCES class identc HERITAGE #tds aco DEFS acf ;
-#tds{
-local
-i : INFO;
-ic : INFOCLASS;
-tds : TDS;
-do
-    tds := new TDS(ENTITE^tds);
-    i := ENTITE^tds.chercheGlobalement(identc^txt);
-    if i /= nil then
-        error(B_17, identc^txt);
-    else
-        ic := new INFOCLASS(tds, identc^txt, HERITAGE^infoclass);
-        ENTITE^tds.inserer(ic);
-        DEFS^tds := tds;
-    end
-end
-}
--- acces 
-ACCES -> public;
+--IDC -> ;
+--IDC -> pt identc IDC ;
+---- definition d'une classe (peut etre en dehors d'un namespace)
+--ENTITE -> ACCES class identc HERITAGE aco DEFS acf ;
+---- acces 
+--ACCES -> public;
 --ACCES -> private;
 --ACCES -> ;
--- heritage
-HERITAGE -> #infoclass ;
-#infoclass{
-do
-    HERITAGE^infoclass := nil;
-end
-}
-HERITAGE -> dpts identc #hinfo IDC #infoclass ;
-#hinfo{
-local
-i : INFO;
-do
-    i := HERITAGE^tds.chercherGlobalement(identc^txt);
-    if i=nil then
-        error(B_18, identc^txt);
-    else
-        match i
-        with INFONAMESPACE then
-            IDC^hinfo := i;
-        else match i
-            with INFOCLASS then
-                IDC^hinfo := i;
-            else
-                error (B_19, identc^txt);
-            end
-        end
-    end
-end
-}
-#infoclass {
-local
-i : INFO;
-do
-    i := IDC^info;
-    match i
-    with INFOCLASS then
-        HERITAGE^infoclass := i;
-    else
-        error(B_20, identc^txt);
-    end
-end
-}
--- membres d'une classe
-DEFS -> ;
-DEFS ->  ACCES DEF DEFS ;
-DEF  ->  TYPE ident #htype DECL #tds;
-#htype{
-local
-do
-    DECL^nom := ident^txt;
-    DECL^htype := TYPE^type;
-end
-}
-#tds{
-local
-i : INFO;
-iv : INFOVAR;
-lc : LCHAMPS;
-do
-    if ~DECL^est_fonction then
-        lc := DEF^infoclass.getAttributs();
-	    if lc.chercher(ident^txt) then 
-		    error(B_21,ident^txt);
-		else
-	        DEF^infoclass.addAttribut(ident^txt, TYPE^type);
-        end
-    else
-        DEF^infoclass.addMethod(ident^txt, DECL^syn_infofon);
-    end     
-end
-}
--- constructeur
-DEF  ->  identc paro PARFS parf BASE BLOC;
--- appel eventuel au constructeur de la classe parente.
-BASE -> ;
-BASE -> dpts base paro ES parf  ;
--- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
-PARF ->  MODE TYPE ident ;
-MODE -> ;
+---- heritage
+--HERITAGE -> ;
+--HERITAGE -> dpts identc IDC ;
+---- membres d'une classe
+--DEFS -> ;
+--DEFS ->  ACCES DEF DEFS ;
+--DEF  ->  TYPE ident DECL ;
+---- constructeur
+--DEF  ->  identc paro PARFS parf BASE BLOC;
+---- appel eventuel au constructeur de la classe parente.
+--BASE -> ;
+--BASE -> dpts base paro ES parf  ;
+---- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
+--PARF ->  MODE TYPE ident ;
 --MODE -> ref ;
 --MODE -> out ; 
-F -> true;
-F -> false;
-F -> this FX;
-F -> base FX;
-F -> null2;
-F -> new identc IDC paro ES parf ;
+--F -> true;
+--F -> false;
+--F -> this FX;
+--F -> base FX;
+--F -> null2;
+--F -> new identc IDC paro ES parf ;
 end

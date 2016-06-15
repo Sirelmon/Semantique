@@ -28,8 +28,10 @@ inh machine : IMachine for
          E, AFFX, A, AX, R, RX, T, TX, F,FX;
  inh hcode: STRING for ENTITES, ENTITE, RX,TX,FX,AFFX,AX,ESX;
  syn est_fonction : BOOLEAN for DECL;
- syn code_est_adresse : BOOLEAN for F, FX;
+ inh hest_fonction : BOOLEAN for BLOC;
+ syn code_est_adresse : BOOLEAN for E, A, R, T, F, FX;
  inh hcode_est_adresse : BOOLEAN for FX;
+ syn etoile : BOOLEAN for F;
  syn adresse : Emplacement for A,AX,R,RX,T,TX,F,FX;
  inh hadresse : Emplacement for AFFX,AX,RX,TX,FX;
  inh gauche_affect : BOOLEAN for E, AFFX,A,AX,R,RX,T,TX,F,FX;
@@ -307,6 +309,8 @@ do
         m.putAll(PARFS^para);
         BLOC^infofon := FONCTION^infofon;
         BLOC^hdep := 3;
+        --Pour éviter de POP à la fin d'un BLOC de FONCTION
+        BLOC^hest_fonction := true;
     end
 end
 }
@@ -534,7 +538,11 @@ end
 
 #gen {
 do
-    BLOC^code := INSTS^code+BLOC^machine.genFree(t.getTailleLocales());
+    if BLOC^hest_fonction then
+        BLOC^code := INSTS^code;
+    else
+        BLOC^code := INSTS^code+BLOC^machine.genFree(t.getTailleLocales());
+    end
     BLOC^dep := INSTS^dep;
 end
 }
@@ -590,7 +598,7 @@ iv: INFOVAR;
 e : Emplacement;
 do
  i:= INST^tds.chercherGlobalement(ident^txt);
- if i /= null then error (B_06, " 528");
+ if i /= null then error (B_01, ident^txt);
  else 
     e := new Emplacement(INST^hdep,new Register("LB",0));
     iv:= new INFOVAR(TYPE^type,e);
@@ -630,6 +638,7 @@ t :TDS;
 do
     t := new TDS(INST^tds);
     BLOC^tds := t;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -652,6 +661,7 @@ end
 do
     tds := new TDS(INST^tds);
     BLOC^tds := tds;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -669,6 +679,7 @@ t :TDS;
 do
     t := new TDS(SIX^tds);
     BLOC^tds := t;
+    BLOC^hest_fonction := false;
 end
 }
 
@@ -742,7 +753,7 @@ do
  end
  E^type:= A^type;
  E^code := AFFX^code;
-
+ E^code_est_adresse := A^code_est_adresse;
 end
 }
 -- affectation
@@ -784,6 +795,7 @@ do
   A^type:= AX^type;
   A^code := AX^code;
   A^adresse := AX^adresse;
+  A^code_est_adresse := R^code_est_adresse;
 end
 }
 
@@ -885,6 +897,7 @@ do
     R^type := RX^type;
     R^code := RX^code;
     R^adresse := RX^adresse;
+    R^code_est_adresse := T^code_est_adresse; 
 end
 }
 
@@ -972,6 +985,7 @@ do
     T^type := TX^type;
     T^code := TX^code;
     T^adresse := TX^adresse;
+    T^code_est_adresse := F^code_est_adresse;
 end
 }
 TX ->   OPMUL #info F #htype TX #type ;
@@ -1063,6 +1077,7 @@ do
     F^code_est_adresse := false;
     F^code := F^machine.genCst(entier^txt);
     F^adresse := nil;
+    F^etoile:=false;
 end
 }
 -- Constante chaine
@@ -1082,6 +1097,7 @@ do
        F^code_est_adresse := false;
        F^code := F^machine.genCst(caractere^txt);
        F^adresse := nil;
+       F^etoile := false;
 end
 }
 -- expression unaire
@@ -1096,6 +1112,7 @@ do
     F^code := F1^code + F^machine.genSubr(OPUN^op, F1^type);
     F^code_est_adresse := F1^code_est_adresse;
     F^adresse := nil;
+    F^etoile := F1^etoile;
    end
 
 end
@@ -1141,6 +1158,7 @@ do
    F^code := F^machine.genNull();
    F^code_est_adresse := true;
    F^adresse := nil;
+   F^etoile := false;
 end
 }
 -- expression parenthesee
@@ -1150,7 +1168,7 @@ local
 do
     FX^htype := E^type;
     FX^hcode := E^code;
-    FX^hcode_est_adresse := false;
+    FX^hcode_est_adresse := E^code_est_adresse;
     FX^hadresse := nil;
 end
 }
@@ -1160,6 +1178,7 @@ do
     F^code := FX^code;
     F^code_est_adresse := FX^code_est_adresse;
     F^adresse := nil;
+    F^etoile := false;
 end
 }
 
@@ -1170,6 +1189,7 @@ do
     F^code := F1^code;
     F^code_est_adresse := F1^code_est_adresse;
     F^adresse := nil;
+    F^etoile := F1^etoile;
 end
 }
 
@@ -1184,21 +1204,26 @@ do
     with POINTEUR then
         tp := t.getTypeP();
         F^type := tp;
-        match tp
-        with POINTEUR then
+--        match tp
+--        with POINTEUR then
             F^code_est_adresse := true;
-        else
-            F^code_est_adresse := false;
-        end
+--        else
+--            F^code_est_adresse := false;
+--        end
     else
         error(B_08,F1^type);
     end
-    if F^gauche_affect then
-        F^code := F1^code;
-    else
+    if F1^etoile then
         F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+    else
+        if F^gauche_affect then
+            F^code := F1^code;
+        else
+            F^code := F1^code + F^machine.genReadIndirectMem(F1^type.getTaille());
+        end
     end
     F^adresse := nil;
+    F^etoile := true;
 end
 }
 -- donner les infos a FX
@@ -1228,7 +1253,8 @@ do
             match t
             with STRUCT then
                 if ~F^gauche_affect then
-                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
+--                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
                 else
                     FX^hcode := "";
                 end
@@ -1269,6 +1295,7 @@ do
     F^code := FX^code;
     F^code_est_adresse := FX^code_est_adresse;
     F^adresse := FX^adresse;
+    F^etoile := false;
 end
 }
 
@@ -1294,6 +1321,7 @@ local
  lc : LCHAMPS;
  i : INFO;
  iv : INFOVAR;
+ e : Emplacement;
 do
     t := FX^htype;
         match t
@@ -1316,7 +1344,8 @@ do
                   FX1^hcode := FX^hcode;
                 end
             else
-                FX1^hcode := FX^hcode + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+                e := FX^hadresse;
+                FX1^hcode := FX^machine.genAdr(e.getDep(), e.getReg()) + FX^machine.genAdrField(c.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
             end
             
             end    

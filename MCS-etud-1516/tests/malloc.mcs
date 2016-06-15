@@ -1,4 +1,4 @@
-int * malloc(int taille){
+int malloc(int taille){
   int adr;
   asm {
     LOAD %taille    ; acces au parametre taille
@@ -9,6 +9,12 @@ int * malloc(int taille){
 }
 
 void main() {
-	int * a = malloc(1);
-	int * b = a;
+	char * a = malloc(3);
+	char * b = a;
+	char ** c = malloc(2);
+	char *** d = malloc(4);
+	*d = c;
+	**d = a;
+	**d = b;
+	***d = 'i';
 }

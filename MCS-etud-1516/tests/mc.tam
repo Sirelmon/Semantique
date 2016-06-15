@@ -1,3 +1,229 @@
 ; Generated code for tests/mc.mcs.
 ; Do not modify by hand
-; no code
+   ; declaration de x en 0/SB taille = 1
+	PUSH 1
+; fin de declaration de x
+   ; declaration de p en 1/SB taille = 2
+	PUSH 2
+; fin de declaration de p
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_mallocX0:
+	PUSH 1
+; inline code_asm
+
+
+	LOAD (1) -1[LB]
+	; acces au parametre taille
+
+	SUBR Malloc
+	; allocation
+
+	STORE (1) 3[LB]
+	; resultat dans adr
+
+	LOAD(1) 3[LB]
+	POP(0)1
+	RETURN (1) 1
+_fooX0:
+	PUSH 1
+; gauche_affect
+	LOADL 100
+	STORE(1) 3[LB]
+	PUSH 1
+	LOAD(1) -1[LB]
+	LOAD(1) -2[LB]
+	SUBR IAdd
+	STORE(1) 4[LB]
+	PUSH 1
+	LOADL 1
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 5[LB]
+; gauche_affect
+	LOAD(1) 5[LB]
+	LOADI(1)
+	LOADL 666
+	SUBR IAdd
+	STORE(1) 4[LB]
+	PUSH 1
+	LOADL 1
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 6[LB]
+	LOAD(1) 5[LB]
+	LOAD(1) 6[LB]
+	STOREI(1)
+	LOADL 1
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	LOAD(1) 6[LB]
+	STOREI(1)
+	LOADL 12
+	LOAD(1) 6[LB]
+	STOREI(1)
+	PUSH 1
+	LOAD(1) 6[LB]
+	LOADI(1)
+	LOADI(1)
+	LOADL 9999
+	SUBR IAdd
+	STORE(1) 7[LB]
+	LOAD(1) 5[LB]
+	LOADL 1
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 5[LB]
+	LOAD(1) 5[LB]
+	LOADI(1)
+	POP(0)5
+	RETURN (1) 2
+_barX0:
+	PUSH 1
+	LOADL 3
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	STOREI(1)
+	LOADL 3
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 1
+	LOADL 1
+	SUBR Iadd
+	STOREI(1)
+	PUSH 1
+	LOADL 301
+	STORE(1) 4[LB]
+	PUSH 1
+	LOADL 401
+	STORE(1) 5[LB]
+	PUSH 1
+; gauche_affect
+	LOADL 55
+	SUBR INeg
+	LOAD(1) 4[LB]
+	SUBR IMul
+	LOADL 22
+	SUBR IDiv
+	LOADL 11
+	LOAD(1) 5[LB]
+	SUBR IDiv
+	SUBR IAdd
+	LOADL 33
+	LOAD(1) -1[LB]
+	SUBR IMul
+	LOAD(1) -2[LB]
+	SUBR ISub
+; Appel a _fooX0
+	CALL(SB) _fooX0
+; appel de fonction
+	STORE(1) 6[LB]
+	LOAD(1) 6[LB]
+	POP(0)4
+	RETURN (1) 2
+_pointeurX0:
+	PUSH 1
+	LOAD(1) -1[LB]
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 3[LB]
+	LOADL 1
+	LOADL 999
+; Appel a _fooX0
+	CALL(SB) _fooX0
+; appel de fonction
+	LOAD(1) 3[LB]
+	STOREI(1)
+	LOAD(1) 3[LB]
+	POP(0)1
+	RETURN (1) 1
+_logX0:
+	PUSH 1
+	LOADL 12
+	STORE(1) 3[LB]
+; inline code_asm
+
+
+	LOAD (1) -1[LB]
+	; acces au premier parametre
+
+	SUBR Sout
+
+
+	LOAD (1) -2[LB]
+	; acces au deuxieme parametre
+
+	LOAD (1) 3[LB]
+	; acces a la variable xx
+
+	SUBR IAdd
+
+
+	SUBR IOUT
+
+
+	SUBR LN
+
+
+	POP(0)1
+	RETURN (0) 2
+_mainX0:
+	PUSH 1
+	LOADL 3
+	STORE(1) 3[LB]
+	PUSH 1
+	LOADL 'a'
+	STORE(1) 4[LB]
+	PUSH 1
+	LOADL 999
+	STORE(1) 5[LB]
+	PUSH 1
+	LOAD(1) 4[LB]
+	LOAD(1) 5[LB]
+; Appel a _fooX0
+	CALL(SB) _fooX0
+; appel de fonction
+	STORE(1) 6[LB]
+	LOADL 99
+	LOADL 98
+; Appel a _barX0
+	CALL(SB) _barX0
+; appel de fonction
+	LOADL 'H'
+; Appel a _logX0
+	CALL(SB) _logX0
+; appel de fonction
+	; if
+	LOAD(1) 5[LB]
+	LOADL 0
+	SUBR IEq
+
+	JUMPIF(0) X0
+	LOAD(1) 5[LB]
+	LOADL 'a'
+; Appel a _logX0
+	CALL(SB) _logX0
+; appel de fonction
+	POP(0)0
+
+	JUMP X1
+X0 :
+	LOAD(1) 5[LB]
+	LOADL 's'
+; Appel a _logX0
+	CALL(SB) _logX0
+; appel de fonction
+	POP(0)0
+
+X1 :
+	; fin if
+	LOADL 0
+	POP(0)4
+	RETURN (1) 0
