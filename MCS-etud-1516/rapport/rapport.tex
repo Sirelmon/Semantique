@@ -120,12 +120,15 @@ La génération de code a été gérée de la même façon qu'en TP, mais quelqu
 
 Afin de réaliser les différentes opérations, nous avons créé la fonction 
 $GenSubr$ dans l'interface machine. Cette fonction prend un opérateur, et le type sur lequel il est appliqué, et envoie le code généré. \\
-Par exemple, pour l'addition de deux entiers, le résultat sera "tSUBR IAdd ".
+Par exemple, pour l'addition de deux entiers, le résultat sera "SUBR IAdd ".
 
 \subsection{Appel de fonctions}
 
 Lorsqu'une fonction est appelée, on obtient l'étiquette correspondante à la fonction à appeler en comparant les paramètres d'appels, et les paramètres déclarés, comme expliqué précédemment. 
 L'étiquette est donc unique pour chaque surcharge de la fonction, et on peut ainsi génére le code de l'appel à la fonction avec la méthode \textsl{genCall}.
+
+
+\section{Limitations}
 
 
 \section*{Conclusion}
