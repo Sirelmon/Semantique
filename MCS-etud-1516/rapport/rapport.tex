@@ -1,0 +1,82 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{alltt}
+%\usepackage{picins}
+\usepackage{color}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\author{Damien Hostettler, Simon Maurel, Qi Chen et Vicky Dincher}
+\title{Rapport de projet Sémantique et Traduction des langages} 
+\date{17 Juin 2016}
+
+\renewcommand{\thesection}{\arabic{section}}
+\setcounter{tocdepth}{3}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+ 
+\section*{Introduction}
+
+Le but de ce projet a été de réaliser un compilateur pour les langages $\mu C$ et $\mu C \#$. Ce compilateur doit vérifier les erreurs détectables lors de la compilation (erreurs de types, variable non définies ...) et doit générer la traduction du programme compilé en langage \textbf{TAM}.\\
+La réalisation de ce compilateur passe passe par la gestion de la table des symboles, des erreurs de type, ainsi que la génération de code
+
+
+\section{Construction de la table des symboles}
+
+La table des symboles doit contenir toutes les informations sur ce qui est déclaré dans le programme (variables, types, fonction) sauf leur valeur en temps réel. \\
+Une table des symboles est une liste d'élément de type $INFO$ que l'on peut repérer par leur nom (nom de variable par exemple).
+
+\subsection{Contenu et hiérarchie}
+
+Nous avons donc modélisé notre table comme un $HashMap<String,INFO>$.
+Ce sont les différents couples (Nom des variables (fonctions ...), informations liées).\\
+On trouve ainsi plusieurs type d'informations (toutes héritées de la classe $INFO$): 
+\begin{itemize}
+\item Les $INFOVAR$ liées au variables. Elles contiennent simplement le type de la variable, et son emplacement dans la pile. 
+\item Les $INFOTYPE$ liées aux types créés avec $typedef$. Elles contiennent un type (celui créé). 
+\item Les $INFOFONC$, liées aux fonctions. Elles contiennent le type de retour de la fonction, la liste des différentes possibilités de paramètres pouvant être utilisés avec cette fonction (surcharges), ainsi qu'une TDS fille de la TDS courante, contenant les informations sur les variables (ou types) locales à la fonction. 
+\end{itemize}
+
+%%Schéma de la TDS d'une infofonc
+
+
+On crée donc une TDS fille à chaque nouvelle fonction, mais également lorsque l'on rentre dans un nouveau bloc. On obtient ainsi la hiérarchie suivante: 
+
+%%Schéma tds
+
+
+\subsection{Gestion des variables globales}
+
+Le compilateur implémenté permet l'utilisation de variables globales (déclarées tout au début du programme). 
+
+\subsection{Ajouts pour le $\mu C \#$}
+
+\section{Préconditions et gestions des erreurs de type}
+
+\subsection{Opérateurs et compatibilité de types}
+
+\subsection{Types particuliers}
+
+\subsubsection{Gestion des structs}
+
+\subsubsection{Gestion des pointeurs}
+
+\section{Fonctions et leurs surcharges}
+
+\section{Génération de code}
+
+
+
+
+
+
+\end{document}

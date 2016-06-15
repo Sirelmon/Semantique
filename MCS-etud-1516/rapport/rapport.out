@@ -1,0 +1,11 @@
+\BOOKMARK [1][-]{section.0.1}{Construction de la table des symboles}{}% 1
+\BOOKMARK [2][-]{subsection.0.1.1}{Contenu et hi\351rarchie}{section.0.1}% 2
+\BOOKMARK [2][-]{subsection.0.1.2}{Gestion des variables globales}{section.0.1}% 3
+\BOOKMARK [2][-]{subsection.0.1.3}{Ajouts pour le C \043}{section.0.1}% 4
+\BOOKMARK [1][-]{section.0.2}{Pr\351conditions et gestions des erreurs de type}{}% 5
+\BOOKMARK [2][-]{subsection.0.2.1}{Op\351rateurs et compatibilit\351 de types}{section.0.2}% 6
+\BOOKMARK [2][-]{subsection.0.2.2}{Types particuliers}{section.0.2}% 7
+\BOOKMARK [3][-]{section*.3}{Gestion des structs}{subsection.0.2.2}% 8
+\BOOKMARK [3][-]{section*.4}{Gestion des pointeurs}{subsection.0.2.2}% 9
+\BOOKMARK [1][-]{section.0.3}{Fonctions et leurs surcharges}{}% 10
+\BOOKMARK [1][-]{section.0.4}{G\351n\351ration de code}{}% 11
