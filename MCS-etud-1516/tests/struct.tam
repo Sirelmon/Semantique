@@ -1,0 +1,30 @@
+; Generated code for tests/struct.mcs.
+; Do not modify by hand
+   ; declaration de lucy en 0/SB taille = 8
+	PUSH 8
+; fin de declaration de lucy
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_mainX0:
+	LOADL 1
+	STORE(1) 1[SB]
+	LOADA 0[SB]
+	;Calcul deplacement struct 1
+	LOADL 1
+	SUBR Iadd
+	LOADI(1)
+	STORE(1) 3[SB]
+	LOADL 'g'
+	STORE(1) 0[SB]
+	LOADL 'o'
+	STORE(1) 2[SB]
+	LOADA 0[SB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	LOADI(1)
+	STORE(1) 6[SB]
+	LOADL 'b'
+	STORE(1) 4[SB]
+	RETURN (0) 0

@@ -1,0 +1,60 @@
+; Generated code for tests/malloc.mcs.
+; Do not modify by hand
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_mallocX0:
+	PUSH 1
+; inline code_asm
+
+
+	LOAD (1) -1[LB]
+	; acces au parametre taille
+
+	SUBR Malloc
+	; allocation
+
+	STORE (1) 3[LB]
+	; resultat dans adr
+
+	LOAD(1) 3[LB]
+	RETURN (1) 1
+_mainX0:
+	PUSH 1
+	LOADL 3
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 3[LB]
+	PUSH 1
+	LOAD(1) 3[LB]
+	STORE(1) 4[LB]
+	PUSH 1
+	LOADL 2
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 5[LB]
+	PUSH 1
+	LOADL 4
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 6[LB]
+	LOAD(1) 5[LB]
+	LOAD(1) 6[LB]
+	STOREI(1)
+	LOAD(1) 3[LB]
+	LOAD(1) 6[LB]
+	LOADI(1)
+	STOREI(1)
+	LOAD(1) 4[LB]
+	LOAD(1) 6[LB]
+	LOADI(1)
+	STOREI(1)
+	LOADL 'i'
+	LOAD(1) 6[LB]
+	LOADI(1)
+	LOADI(1)
+	STOREI(1)
+	RETURN (0) 0

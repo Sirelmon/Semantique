@@ -1,0 +1,75 @@
+; Generated code for tests/point_struct.mcs.
+; Do not modify by hand
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_mallocX0:
+	PUSH 1
+; inline code_asm
+
+
+	LOAD (1) -1[LB]
+	; acces au parametre taille
+
+	SUBR Malloc
+	; allocation
+
+	STORE (1) 3[LB]
+	; resultat dans adr
+
+	LOAD(1) 3[LB]
+	RETURN (1) 1
+_mainX0:
+	PUSH 1
+	LOADL 3
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 3[LB]
+	LOADL 't'
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	STOREI(1)
+	LOADL 'i'
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	STOREI(1)
+	LOADL 3
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 1
+	LOADL 1
+	SUBR Iadd
+	STOREI(1)
+	LOADL 1
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 1
+	LOADL 1
+	SUBR Iadd
+	STOREI(1)
+	LOADL 2
+	LOAD(1) 3[LB]
+	;Calcul deplacement struct 2
+	LOADL 2
+	SUBR Iadd
+	STOREI(1)
+	PUSH 1
+	LOADL 1
+; Appel a _mallocX0
+	CALL(SB) _mallocX0
+; appel de fonction
+	STORE(1) 4[LB]
+	LOAD(1) 3[LB]
+	LOAD(1) 4[LB]
+	STOREI(1)
+	LOADL 4
+	LOAD(1) 4[LB]
+	LOADI(1)
+	;Calcul deplacement struct 2
+	LOADL 2
+	SUBR Iadd
+	STOREI(1)
+	RETURN (0) 0
