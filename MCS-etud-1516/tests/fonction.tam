@@ -1,0 +1,89 @@
+; Generated code for tests/fonction.mcs.
+; Do not modify by hand
+   ; declaration de x en 0/SB taille = 1
+	PUSH 1
+; fin de declaration de x
+   ; declaration de f en 1/SB taille = 1
+	PUSH 1
+; fin de declaration de f
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_sommeX0:
+	LOAD(1) -1[LB]
+	LOAD(1) -2[LB]
+	SUBR IAdd
+	RETURN (1) 2
+_sommeX1:
+	LOAD(1) -1[LB]
+	LOAD(1) -2[LB]
+	SUBR IAdd
+	LOAD(1) -3[LB]
+	SUBR IAdd
+	RETURN (1) 3
+_sommeX2:
+	LOAD(1) -2[LB]
+	RETURN (1) 2
+_factX0:
+	; if
+	LOAD(1) -1[LB]
+	LOADL 0
+	SUBR IEq
+
+	JUMPIF(0) X0
+	LOADL 1
+	POP(0)0
+
+	JUMP X1
+X0 :
+	LOAD(1) -1[LB]
+	LOAD(1) -1[LB]
+	LOADL 1
+	SUBR ISub
+; Appel a _factX0
+	CALL(SB) _factX0
+; appel de fonction
+	SUBR IMul
+	POP(0)0
+
+X1 :
+	; fin if
+	RETURN (1) 1
+_mainX0:
+	PUSH 1
+	LOADL 1
+	STORE(1) 3[LB]
+	PUSH 1
+	LOAD(1) 3[LB]
+	LOADL 2
+	SUBR IAdd
+	STORE(1) 4[LB]
+; gauche_affect
+	LOAD(1) 4[LB]
+	LOAD(1) 3[LB]
+; Appel a _sommeX0
+	CALL(SB) _sommeX0
+; appel de fonction
+	STORE(1) 0[SB]
+; gauche_affect
+	LOAD(1) 0[SB]
+	LOAD(1) 4[LB]
+	LOAD(1) 3[LB]
+; Appel a _sommeX1
+	CALL(SB) _sommeX1
+; appel de fonction
+	STORE(1) 0[SB]
+; gauche_affect
+	LOADL 5
+	LOADL 'w'
+; Appel a _sommeX2
+	CALL(SB) _sommeX2
+; appel de fonction
+	STORE(1) 0[SB]
+	PUSH 1
+	LOAD(1) 0[SB]
+; Appel a _factX0
+	CALL(SB) _factX0
+; appel de fonction
+	STORE(1) 5[LB]
+	RETURN (0) 0
