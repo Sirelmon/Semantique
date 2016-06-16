@@ -1,0 +1,63 @@
+; Generated code for tests/classe.mcs.
+; Do not modify by hand
+	JUMP X0
+_PointX0:
+	LOAD(1) -3[LB]
+	STORE(1) -2[LB]
+	LOAD(1) -4[LB]
+	STORE(1) -2[LB]
+	RETURN (2) 4
+_inverserX0:
+	PUSH 1
+	LOADA -2[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	LOADI(1)
+	STORE(1) 3[LB]
+	LOADA -2[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	LOADI(1)
+	STORE(1) -2[LB]
+	LOAD(1) 3[LB]
+	STORE(1) -2[LB]
+	RETURN (0) 2
+_sommeX0:
+	LOADA -2[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	LOADI(1)
+	LOADA -2[LB]
+	;Calcul deplacement struct 0
+	LOADL 0
+	SUBR Iadd
+	LOADI(1)
+	SUBR IAdd
+	RETURN (1) 2
+X0 :
+; Appel a _mainX0
+	CALL(SB) _mainX0
+	HALT
+_mainX0:
+	PUSH 2
+	LOADL 2
+	LOADL 1
+	LOAD(2) 3[LB]
+; Appel a _PointX0
+	CALL(SB) _PointX0
+; appel de constructeur
+	STORE(2) 3[LB]
+	LOAD(2) 3[LB]
+; Appel a _inverserX0
+	CALL(SB) _inverserX0
+; appel de fonction
+	PUSH 1
+	LOAD(2) 3[LB]
+; Appel a _sommeX0
+	CALL(SB) _sommeX0
+; appel de fonction
+	STORE(1) 5[LB]
+	RETURN (0) 0

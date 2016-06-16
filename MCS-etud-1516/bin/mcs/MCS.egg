@@ -48,7 +48,7 @@ inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
 T, TX, ES, ESX, RX,F,FX,AX, HERITAGE, DEFS, DEF;
-inh nom : STRING for DECL, AFFX, FONCTION;
+inh nom : STRING for DECL, AFFX, FONCTION, PARFS;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
 inh hinfo : INFO for F,FX, IDC;
@@ -57,6 +57,7 @@ syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
 syn obj : OBJECT for HERITAGE;
+inh type_classe : OBJECT for DEFS, DEF, DECL, FONCTION, PARFS;
 
 
 
@@ -198,6 +199,7 @@ ENTITE -> TYPE ident #decl DECL #code;
 do
     DECL^nom := ident^txt;
     DECL^htype := TYPE^type;
+    DECL^type_classe := nil;
 end
 }
 
@@ -331,19 +333,51 @@ end
 PARFS -> #gen ;
 #gen{
 local
+o : INTEGER;
+tc : OBJECT;
+iv : INFOVAR;
+nom_classe : String;
 do
     PARFS^para:= new LinkedHashMap();
-    if PARFS^est_methode then
-        PARFS^para.put("this", )
+    tc := PARFS^type_classe;
+    nom_classe := tc.getNomClasse();
+    if (tc /= nil ) then
+        o := PARFS^hordre + tc.getTaille();
+        iv := new INFOVAR(tc, new Emplacement(-o, new Register("LB", 0)));
+        PARFS^para.put("this", iv);
+        PARFS^tds.inserer("this",iv);
+    end
 end
 }
 
-PARFS ->  PARF #hordre PARFSX #GEN ;
+PARFS -> #this PARF #hordre PARFSX #GEN ;
+global
+this: LinkedHashMap;
+#this{
+local
+i:INFOVAR;
+o : INTEGER;
+tc : OBJECT;
+nom_classe : String;
+do
+    tc := PARFS^type_classe;
+    nom_classe := tc.getNomClasse();
+    if (tc /= nil ) then
+	    o := PARFS^hordre + tc.getTaille();
+	    i := new INFOVAR(tc,new Emplacement(-o, new Register("LB",0)));
+	    PARF^hordre := o;
+	    this := new LinkedHashMap();
+	    this.put("this",i);
+	    call PARFS^tds.inserer("this",i);
+    end
+end
+}
 #GEN{
 local
 m : LinkedHashMap;
 do
     m := new LinkedHashMap();
+    m.putAll(this);
     m.putAll(PARF^para);
     m.putAll(PARFSX^para);
     PARFS^para := m;
@@ -1317,13 +1351,17 @@ FX ->  pt  ident #htype FX #type ;
 #htype {
 local
  s : STRUCT ;
+ obj : OBJECT;
  t :DTYPE;
  tident: DTYPE;
  c : CHAMP;
  lc : LCHAMPS;
  i : INFO;
  iv : INFOVAR;
+ iff : INFOFONC;
  e : Emplacement;
+ tds : TDS;
+ e_attr : Emplacement;
 do
     t := FX^htype;
         match t
@@ -1351,8 +1389,48 @@ do
             end
             
             end    
-          else
-            error(B_11,t.getNom()); 
+          else match t
+            with OBJECT then
+                obj := t;
+                tds := obj.getTds();
+                i := tds.chercherGlobalement(ident^txt);
+                if i=nil then
+                    error(B_19, ident^txt);
+                else
+                    match i
+                    with INFOVAR then
+                      iv := i;
+                      e_attr := iv.getEmpl();
+		              if (FX^hadresse /= nil) then
+		                FX1^hadresse := new Emplacement(FX^hadresse.getDep() + e_attr.getDep(), FX^hadresse.getReg());
+		              end
+		              FX1^htype := iv.getType();
+		              tident := iv.getType();
+		              if (FX^gauche_affect) then
+		                if (FX^hcode_est_adresse) then
+		                  FX1^hcode := FX^hcode + FX^machine.genAdrField(e_attr.getDep());
+		                else
+		                  FX1^hcode := FX^hcode;
+		                end
+		              else
+		                e := FX^hadresse;
+		                FX1^hcode := FX^machine.genAdr(e.getDep(), e.getReg()) + FX^machine.genAdrField(e_attr.getDep()) + FX^machine.genReadIndirectMem(tident.getTaille());
+                      end
+                    else match i
+                        with INFOFONC then
+                            iff := i;
+                            FX1^htype := iff.getRtype();
+                            FX1^hcode := "";
+                            FX1^hcode_est_adresse := false;
+                            FX1^hinfo := i;
+                        else
+                            error(B_20, ident^txt);
+                        end
+                    end
+                end
+            else
+                error(B_11,t.getNom()); 
+            end
           end
 end
 }
@@ -1599,25 +1677,25 @@ obj : OBJECT;
 #htype {
 do
     if (HERITAGE^obj /= nil) then
-        obj := new OBJECT(HERITAGE^obj);
+        obj := new OBJECT(identc^txt, HERITAGE^obj);
     else
-        obj := new OBJECT();
+        obj := new OBJECT(identc^txt);
     end
     DEFS^tds := obj.getTds(); 
-    DEFS^hdep := 0; 
+    DEFS^hdep := obj.getTaille(); 
+    DEFS^type_classe := obj;
 end
 }
 
 #type {
 do
-    obj.setTaille();
     if (obj.getTaille() = DEFS^dep) then
         ENTITE^tds.inserer(identc^txt, new INFOTYPE(obj));
     else
         error(B_17, identc^txt);
     end
     ENTITE^dep := ENTITE^hdep;
-    ENTITE^code := DEFS^code;
+    ENTITE^code := ENTITE^machine.genJump(DEFS^code);
 end
 }
 
@@ -1676,7 +1754,13 @@ do
     i := IDC^info;
     match i 
     with INFOTYPE then
-        HERITAGE^obj := IDC^info.getType();
+        type := i.getType();
+        match type
+        with OBJECT then
+            HERITAGE^obj := type;
+        else
+            error(B_100);
+        end
     else
         error(B_100);
     end
@@ -1692,17 +1776,16 @@ do
 end
 }
 
-DEFS ->  ACCES DEF #hdep DEFS #code;
-#hdep{
+DEFS ->  ACCES DEF #hcode DEFS #code;
+#hcode{
 do
-    DEFS1^hdep := DEF^dep;
     DEFS1^hcode := DEF^code;
 end
 }
 #code{
 do
     DEFS^code := DEFS1^code;
-    DEFS^dep := DEFS1^dep;
+    DEFS^dep := DEF^dep + DEFS1^dep;
 end
 }
 
@@ -1724,6 +1807,7 @@ do
     iv := new INFOVAR(TYPE^type, new Emplacement(DEF^hdep,new Register("fictif",0)));
     DEF^dep := DEF^hdep+TYPE^type.getTaille();
     DEF^tds.inserer(ident^txt,iv);
+    DEF^type_classe.majTaille(TYPE^type);
     DEF^code := "";
   else
     DEF^code := DEF^hcode + DECL^code;
@@ -1733,10 +1817,93 @@ end
 
 
 -- constructeur
-DEF  ->  identc paro PARFS parf BASE BLOC;
+DEF  ->  identc #test_nom paro #tds PARFS parf BASE #info BLOC #code;
+global
+s : SURCHARGE;
+num_surcharge : INTEGER;
+iff : INFOFONC;
+#test_nom{
+local
+m : ArrayList;
+i : INFO;
+tds : TDS;
+nom_classe : String;
+do
+    nom_classe := DEF^type_classe.getNomClasse();
+    if ~(nom_classe.equals(identc^txt)) then
+        error(B_21, identc^txt, nom_classe);
+    else
+	    m := new ArrayList();
+        tds := DEF^type_classe.getTds();
+	    i := tds.chercherGlobalement(identc^txt);
+	    if i /= nil then
+	      match i
+	      with INFOFONC then
+	        iff := i;
+	      else
+	        error(B_16, identc^txt);
+	      end
+	    else
+	       iff := new INFOFONC(DEF^type_classe,m,tds);
+	       call tds.inserer(identc^txt, iff);
+	    end
+    end
+end
+}
+#tds{
+local
+t: TDS;
+t2: TDS;
+do
+    t := new TDS(DEF^tds);
+    PARFS^tds := t;
+    t2 := new TDS(t);
+    BLOC^tds := t2;
+    
+    iff.setTds(t2); 
+    
+    PARFS^hordre := 0;
+    
+    PARFS^nom := identc^txt;
+end
+}
+
+#info{
+local
+t : TDS;
+m : LinkedHashMap;
+do
+
+    --penser à surcharge la méthode mmParas pour gérer les LinkedHashMap en paramètre
+    if (iff.mmParas(PARFS^para) /= -1) then
+        error(B_02, identc^txt);
+    else
+        num_surcharge := iff.addSurcharge(identc^txt);
+        s:=iff.getSurcharge(num_surcharge);
+        m := s.getParas();
+        m.putAll(PARFS^para);
+        BLOC^infofon := iff;
+        BLOC^hdep := 3;
+        --Pour éviter de POP à la fin d'un BLOC de DEF
+        BLOC^hest_fonction := true;
+    end
+end
+}
+
+#code {
+local
+t : DTYPE;
+tailleparas : INTEGER;
+do
+  tailleparas := s.getTailleParas();
+  t := iff.getRtype();
+  DEF^code := DEF^machine.genFonction(s.getEtiq(), tailleparas, t.getTaille(), BLOC^code);
+  DEF^dep := DEF^hdep;
+end
+}
 -- appel eventuel au constructeur de la classe parente.
 BASE -> ;
-BASE -> dpts base paro ES parf  ;
+--BASE -> dpts base paro ES parf  ;
 -- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
 --PARF ->  MODE TYPE ident ;
 --MODE -> ref ;
@@ -1773,9 +1940,9 @@ t : DTYPE;
 e : Emplacement;
 eti : String; 
 do
-    i := F^tds.chercherGlobalement(ident^txt);
+    i := F^tds.chercherGlobalement("this");
     if i = nil then
-        error(B_03, ident^txt);
+        error(B_03, "_this_");
     else
         FX^hinfo := i;
         --FX^htype := i.getType();
@@ -1787,39 +1954,15 @@ do
             FX^hadresse := e;
             FX^htype := iv.getType();
             match t
-            with STRUCT then
+            with OBJECT then
                 if ~F^gauche_affect then
                     FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
 --                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
                 else
                     FX^hcode := "";
                 end
-                FX^hcode_est_adresse := false;
-            else match t
-            with POINTEUR then
-                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
-                FX^hcode_est_adresse := true;
-            else
-                if F^gauche_affect then
-                    FX^hcode := F^machine.genComment("gauche_affect");
-                else
-                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
-                end
-                FX^hcode_est_adresse := false;
-            end
-            
+                FX^hcode_est_adresse := false;            
            end 
-            
-        else match i
-        with INFOFONC then
-            i_f := i;
-            FX^htype := i_f.getRtype();
-                FX^hcode := "";
-                FX^hcode_est_adresse := false;
-        else
-            
-            error(B_09,ident^txt);
-        end
         end
     end
 end
@@ -1835,6 +1978,60 @@ do
 end
 }
 --F -> base FX;
-F -> null2;
-F -> new identc IDC paro ES parf ;
+F -> null2 #type;
+#type{
+do
+   F^type := new OBJECT(nil);
+   F^code := F^machine.genNull();
+   F^code_est_adresse := false;
+   F^adresse := nil;
+   F^etoile := false;
+end
+}
+F -> new identc IDC paro ES parf #code;
+#code{
+local
+i : INFO;
+i2 : INFO;
+it : INFOTYPE;
+iff : INFOFONC;
+t : DTYPE;
+obj : OBJECT;
+tds : TDS;
+num_surcharge : INTEGER;
+surcharge : SURCHARGE;
+do
+    i := F^tds.chercherGlobalement(identc^txt);
+    match i
+    with INFOTYPE then
+        it := i;
+        t := it.getType();
+        match t
+        with OBJECT then
+            obj := t;
+            tds := obj.getTds();
+            i2 := tds.chercherGlobalement(identc^txt);
+		    match i2
+		      with INFOFONC then
+		        iff := i2;
+		        num_surcharge := iff.mmParas(ES^paraset);
+		        if (num_surcharge = -1) then
+                    --pour l'etiquette
+		            surcharge := iff.getSurcharge(0);
+		            error(B_13,iff.getEtiq());
+		        else
+		            surcharge := iff.getSurcharge(num_surcharge);
+		            F^code := ES^code + F^machine.genCall(surcharge.getEtiq()) + F^machine.genComment("appel de constructeur");
+                    F^type := t;
+                    F^code_est_adresse := false;
+                    F^etoile := false;
+                    F^adresse := nil;
+		        end
+		      else 
+		        error(B_14);  
+		    end
+        end
+    end
+end
+}
 end

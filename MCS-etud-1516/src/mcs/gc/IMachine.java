@@ -65,6 +65,8 @@ public interface IMachine {
 	String genFree(int tailleLocales);
 
 	String genMalloc(int taille);
+
+	String genJump(String att_code);
 	
 	
 	

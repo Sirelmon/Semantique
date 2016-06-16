@@ -138,6 +138,11 @@ public class MTAM extends AbstractMachine {
 		return "\tSUBR MVoid\n";
 	}
 	
+	public String genJump(String code) {
+		String etiq = genEtiq();
+		return "\tJUMP " + etiq + "\n" + code + etiq + " :\n";
+	}
+	
 	public String genSubr(OPERATEUR op, DTYPE type) {
 		if (type.getNom().equals("int")) {
 			switch (op.getNum())

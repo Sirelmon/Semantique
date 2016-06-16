@@ -7,19 +7,32 @@ import mcs.tds.TDS;
 public class OBJECT extends DTYPE {
 	
 	protected TDS tds;
+	protected String nomClasse;
 	
-	public OBJECT() {
+	public OBJECT(String nomClasse) {
 		super("object",0);
 		this.tds = new TDS();
+		this.nomClasse = nomClasse;
 	}
 	
-	public OBJECT(OBJECT heritage) {
+	public OBJECT(String nomClasse, OBJECT heritage) {
 		super("object",heritage.getTaille());
 		this.tds = new TDS(heritage.tds);
+		this.nomClasse = nomClasse;
 	}
-		
+	
+	public boolean compareTo(DTYPE autre) {
+		if (autre instanceof OBJECT)
+			return (this.getNomClasse().equals(((OBJECT) autre).getNomClasse()));
+		return false;
+	}
+	
 	public TDS getTds() {
 		return tds;
+	}
+	
+	public String getNomClasse() {
+		return nomClasse;
 	}
 	
 	public void majTaille(DTYPE type) {
@@ -27,11 +40,12 @@ public class OBJECT extends DTYPE {
 	}
 	
 	public void setTaille() {
-		int taille = 0;
+		int somme = 0;
 		for (INFO i : tds.values()) {
 			if (i instanceof INFOVAR) {
-				taille += ((INFOVAR) i).getTaille();
+				somme += ((INFOVAR) i).getTaille();
 			}
 		}
+		this.taille = somme;
 	}
 }

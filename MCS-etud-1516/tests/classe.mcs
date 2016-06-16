@@ -1,0 +1,25 @@
+public class Point {
+	public int x;
+	public int y;
+	
+	public Point(int a, int b){
+		this.x = a;
+		this.y = b;
+	}
+	
+	public void inverser() {
+		int z = this.x;
+		this.x = this.y;
+		this.y = z;
+	}
+	
+	public int somme() {
+		return (this.x + this.y);
+	}
+}
+
+void main() {
+	Point p = new Point(p,1,2);
+	p.inverser(p);
+	int s = p.somme(p);
+}
