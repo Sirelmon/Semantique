@@ -58,11 +58,17 @@ Le compilateur implémenté permet l'utilisation de variables globales (déclar�
 
 \subsection{Ajouts pour le $\mu C \#$}
 
-Les notions de  $namespace$ et de $classe$ ont été ajoutées dans le langage $\mu C \#$. Deux nouveaux types d'informations seront donc présents dans la table: 
+Les notions de  $namespace$ et de $classe$ ont été ajoutées dans le langage $\mu C \#$. On aura ainsi des \textsc{infonamespace} qui peuvent être présents dans la TDS. Les namespaces ne sont pas gérés dans notre programme.\\
+
+Afin de représenter une classe, nous avons créé le type \textsc{object} qui hérite de \textsc{dtype}. 
+Ainsi, un \textsc{object} contient une \textsc{tds}, qui est initialisée par: 
 \begin{itemize}
-\item les \textsc{infonamespace}, liées aux namespace. Elles contiennent la TDS des classes de ce namespace.
-\item les \textsc{infoclass} liées aux classes. Elles contiennent un \textsc{struct} de ses attributs, une liste des méthodes de la classe (sous forme d'\textsc{infofonc}).
+\item Une \textsc{tds} vide si la classe déclarée est la classe mère (classe objet). 
+\item Une \textsc{tds} fille de la \textsc{tds} de la classe mère, si la classe considérée est héritée.
 \end{itemize}
+
+La taille de notre classe est définie par la taille de tous ses attributs (comme dans le cas d'un \textsc{struct}). Ainsi, on définit la taille à la fin de la définition d'une classe, avec une recherche de chaque attribut dans la \textsc{tds} de la classe.
+
 
 %%Hiérarchie à définir à la fin 
 
@@ -128,12 +134,33 @@ Lorsqu'une fonction est appelée, on obtient l'étiquette correspondante à la f
 L'étiquette est donc unique pour chaque surcharge de la fonction, et on peut ainsi génére le code de l'appel à la fonction avec la méthode \textsl{genCall}.
 
 
-\section{Limitations}
+\section{Limitations et extensions}
 
+\subsection{Préconditions pour le $\mu C$}
+
+Nous avons défini plusieurs préconditions dans le cadre de la compilation du $\mu C$:
+\begin{itemize}
+\item Les variables globales doivent être déclarées avant les fonctions.
+\item Une fonction peut être surchargée, mais doit toujours avoir le même type de retour.
+\item Une fonction ou un type doivent être déclarés avant d'être utilisés.
+\item On peut utiliser la récursivité des fonctions mais aucun message d'erreur ne sera affiché en cas d'une boucle infinie.
+\item Il faut implanter une fonction \textbf{main}  sans argument avec un type de retour \textbf{void} . Cette fonctions sera lancée en lançant le programme. Si l'utilisateur désire surcharger la fonction main, il faudra déclarer le $main$ sans paramètre avant d'éventuelles autres fonction $main$ (cela sera donc inutile).
+\item A la fin de l'exécution du programme (en TAM), seules les variables globales et les variables pointées resteront sauvegardées dans la pile, le reste sera effacé.
+\end{itemize}
+
+\subsection{Traitement du $\mu C \#$}
+
+Nous avons longuement réfléchi à l'implémentation du $\mu C \#$, et nous avons mis en place une stratégie pour gérer l'aspect \textsc{tds} lié à ce langage, mais nous avons éprouvé quelques difficultés à établir une stratégie fonctionnelle.\\
+Par conséquent, le compilateur implémenté n'est pas opérationnel avec un programme écrit en $\mu C \#$.\\
+Ces difficultés sont liées à la différence notable entre le langage impératif $\mu C$ et le langage objet $\mu C \#$, car beaucoup de chose étant théoriquement impossibles en objet (par exemple, déclarer une variable globale dans une classe) sont possibles en impératif.\\
+ Cela implique de devoir changer le traitement de certaines règles de productions définies lors de la définition du $\mu C$.
 
 \section*{Conclusion}
 
 
+Ce projet nous a permis de nous familiariser avec la compilation de programme. Nous avons ainsi pu mieux appréhender la manière dont on peut compiler un programme (gestion de la table des symboles, erreurs de types), mais aussi la traduction d'un langage. \\
+Ce projet a également mis en valeur la gestion de la mémoire lors de l'exécution d'un programme, ainsi que les différences intrinsèques entre les langages de type impératif et objet.
+Ainsi, cela pourra nous permettre de mieux optimiser nos futurs programmes, en prenant en compte l'allocation mémoire et la gestion de la pile.
 
 
 \end{document}

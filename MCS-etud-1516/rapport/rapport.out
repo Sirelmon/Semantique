@@ -9,4 +9,6 @@
 \BOOKMARK [1][-]{section.0.4}{G\351n\351ration de code}{}% 9
 \BOOKMARK [2][-]{subsection.0.4.1}{Op\351rateurs}{section.0.4}% 10
 \BOOKMARK [2][-]{subsection.0.4.2}{Appel de fonctions}{section.0.4}% 11
-\BOOKMARK [1][-]{section.0.5}{Limitations}{}% 12
+\BOOKMARK [1][-]{section.0.5}{Limitations et extensions}{}% 12
+\BOOKMARK [2][-]{subsection.0.5.1}{Pr\351conditions pour le C}{section.0.5}% 13
+\BOOKMARK [2][-]{subsection.0.5.2}{Traitement du C \043}{section.0.5}% 14
