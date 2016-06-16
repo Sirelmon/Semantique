@@ -252,19 +252,14 @@ do
       match i
       with INFOFONC then
         iff := i;
---        num_surcharge := iff.addSurcharge(DECL^nom);
         FONCTION^infofon := iff;
---        FONCTION^hnum_surcharge := num_surcharge;
       else
         error(B_16, DECL^nom);
       end
     else
        FONCTION^htype := DECL^htype;
---       surcharge := new SURCHARGE(new LinkedHashMap(), DECL^nom + "X0");
---       m.add(surcharge);
        iff := new INFOFONC(DECL^htype,m,DECL^tds);
        FONCTION^infofon:= iff;
---       FONCTION^hnum_surcharge := 0;
        call DECL^tds.inserer(DECL^nom, iff);
     end
 end
@@ -338,6 +333,8 @@ PARFS -> #gen ;
 local
 do
     PARFS^para:= new LinkedHashMap();
+    if PARFS^est_methode then
+        PARFS^para.put("this", )
 end
 }
 

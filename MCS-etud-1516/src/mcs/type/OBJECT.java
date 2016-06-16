@@ -1,5 +1,7 @@
 package mcs.type;
 
+import mcs.tds.INFO;
+import mcs.tds.INFOVAR;
 import mcs.tds.TDS;
 
 public class OBJECT extends DTYPE {
@@ -27,7 +29,9 @@ public class OBJECT extends DTYPE {
 	public void setTaille() {
 		int taille = 0;
 		for (INFO i : tds.values()) {
-			
+			if (i instanceof INFOVAR) {
+				taille += ((INFOVAR) i).getTaille();
+			}
 		}
 	}
 }
