@@ -16,7 +16,7 @@ inh machine : IMachine for
          
          E, AFFX, A, AX, R, RX, T, TX, F,FX
 --         -- decommenter la ligne suivante pour MCS
---       , BASE, DEFS, DEF
+         , BASE, DEFS, DEF
 --         -- fin extension MCS
          ;
  syn type : DTYPE for TYPE, STYPE, PTRS,CHAMP, E, AFFX,F,R,RX,
@@ -25,8 +25,8 @@ inh machine : IMachine for
  syn code : STRING for 
          ENTITES, ENTITE, DECL, FONCTION, INST, BLOC, INSTS, SIX,
          ES, ESX, 
-         E, AFFX, A, AX, R, RX, T, TX, F,FX;
- inh hcode: STRING for ENTITES, ENTITE, RX,TX,FX,AFFX,AX,ESX;
+         E, AFFX, A, AX, R, RX, T, TX, F,FX, DEFS, DEF;
+ inh hcode: STRING for ENTITES, ENTITE, RX,TX,FX,AFFX,AX,ESX, DEFS, DEF;
  syn est_fonction : BOOLEAN for DECL;
  inh hest_fonction : BOOLEAN for BLOC;
  syn code_est_adresse : BOOLEAN for E, A, R, T, F, FX;
@@ -35,8 +35,8 @@ inh machine : IMachine for
  syn adresse : Emplacement for A,AX,R,RX,T,TX,F,FX;
  inh hadresse : Emplacement for AFFX,AX,RX,TX,FX;
  inh gauche_affect : BOOLEAN for E, AFFX,A,AX,R,RX,T,TX,F,FX;
- inh hdep : INTEGER for ENTITES, ENTITE, BLOC, INSTS, INST , SIX, CHAMPS;
- syn dep : INTEGER for ENTITES, ENTITE, BLOC, INST , INSTS, SIX;
+ inh hdep : INTEGER for ENTITES, ENTITE, BLOC, INSTS, INST , SIX, CHAMPS, DEFS, DEF;
+ syn dep : INTEGER for ENTITES, ENTITE, BLOC, INST , INSTS, SIX, DEFS, DEF;
  inh champs : LCHAMPS for CHAMPS,CHAMP;
  syn para: LinkedHashMap for PARF,PARFS,PARFSX;
  syn ordre: INTEGER for PARF;
@@ -47,16 +47,16 @@ syn code_asm : STRING for ASM;
 inh tds_asm : TDS for ASM;
 inh tds : TDS for ENTITES, ENTITE, DECL, FONCTION,PARF, PARFS,PARFSX, 
 TYPE, STYPE, SIX,CHAMPS, CHAMP, INST,INSTS, BLOC, E, A, AFFX, R,
-T, TX, ES, ESX, RX,F,FX,AX;
+T, TX, ES, ESX, RX,F,FX,AX, HERITAGE, DEFS, DEF;
 inh nom : STRING for DECL, AFFX, FONCTION;
 syn hnom : STRING for CHAMP;
 inh infofon : INFOFONC for FONCTION,BLOC,INSTS,INST,SIX;
-inh info : INFO for F,FX;
+inh hinfo : INFO for F,FX, IDC;
+syn info : INFO for IDC;
 syn op: OPERATEUR for OPADD,OPMUL,OPREL, OPUN;
 syn paraset: ArrayList for ESX,ES;
 inh hparaset: ArrayList for ESX;
-syn obj : OBJECT for HERITAGE,DEFS;
-inh hobj : OBJECT for DEFS;
+syn obj : OBJECT for HERITAGE;
 
 
 
@@ -82,21 +82,21 @@ sugar char is  "char";
 sugar struct is "struct";
 sugar typedef is "typedef";
 -- decommenter pour MCS
---sugar ref is "ref" ;
---sugar out is "out";
---sugar namespace is "namespace";
---sugar using is "using";
---sugar class is "class";
---sugar public is "public" ;
---sugar private is "private";
---sugar dpts is "\:";
---sugar bool is "bool";
---sugar true is "true";
---sugar false is "false";
---sugar this is "this";
---sugar new is "new" ;
---sugar null2 is "null";
---sugar base is "base" ;
+sugar ref is "ref" ;
+sugar out is "out";
+sugar namespace is "namespace";
+sugar using is "using";
+sugar class is "class";
+sugar public is "public" ;
+sugar private is "private";
+sugar dpts is "\:";
+sugar bool is "bool";
+sugar true is "true";
+sugar false is "false";
+sugar this is "this";
+sugar new is "new" ;
+sugar null2 is "null";
+sugar base is "base" ;
 -- 
 sugar retour is  "return";
 sugar arrow is "\-\>";
@@ -972,7 +972,7 @@ end
 T -> #info  F #hcode TX #code ;
 #info{
 do
- F^info := null;
+ F^hinfo := null;
 end
 }
 #hcode{
@@ -996,7 +996,7 @@ end
 TX ->   OPMUL #info F #htype TX #type ;
 #info{
 do
-   F^info := null;
+   F^hinfo := null;
 end
 }
 
@@ -1246,7 +1246,7 @@ do
     if i = nil then
         error(B_03, ident^txt);
     else
-        FX^info := i;
+        FX^hinfo := i;
         --FX^htype := i.getType();
         match i
         with INFOVAR then
@@ -1384,7 +1384,7 @@ i : INFO;
 iv : INFOVAR;
 tc : DTYPE;
 do
-    i := FX^info;
+    i := FX^hinfo;
     match i 
     with INFOVAR then
         iv := i;
@@ -1442,9 +1442,9 @@ iff :INFOFONC;
 num_surcharge : INTEGER;
 surcharge : SURCHARGE;
 do
-    match FX^info 
+    match FX^hinfo 
       with INFOFONC then
-        iff := FX^info;
+        iff := FX^hinfo;
         num_surcharge := iff.mmParas(ES^paraset);
         if (num_surcharge = -1) then
             surcharge := iff.getSurcharge(0);
@@ -1590,35 +1590,37 @@ end
 --ENTITE -> using identc IDC pv ;
 IDC -> #obj;
 #obj {
-
-
+do
+    IDC^info:=IDC^hinfo;
+end
 }
 --IDC -> pt identc IDC ;
 -- definition d'une classe (peut etre en dehors d'un namespace)
-ENTITE -> ACCES class identc #tds HERITAGE #htype aco DEFS acf #type ;
-#tds {
-do 
-    HERITAGE^tds := ENTITE^tds;
-end
-}
-
-
-#htype {
-local
+ENTITE -> ACCES class identc HERITAGE #htype aco DEFS acf #type ;
+global
 obj : OBJECT;
+#htype {
 do
     if (HERITAGE^obj /= nil) then
         obj := new OBJECT(HERITAGE^obj);
     else
         obj := new OBJECT();
     end
-    DEFS^hobj := obj;  
+    DEFS^tds := obj.getTds(); 
+    DEFS^hdep := 0; 
 end
 }
 
 #type {
 do
-    ENTITE^tds.inserer(identc^txt, DEFS^obj);
+    obj.setTaille();
+    if (obj.getTaille() = DEFS^dep) then
+        ENTITE^tds.inserer(identc^txt, new INFOTYPE(obj));
+    else
+        error(B_17, identc^txt);
+    end
+    ENTITE^dep := ENTITE^hdep;
+    ENTITE^code := DEFS^code;
 end
 }
 
@@ -1641,8 +1643,30 @@ HERITAGE -> dpts identc #hobj IDC #herit  ;
 #hobj {
 local
 i : INFO;
+it : INFOTYPE;
+t :  DTYPE;
+obj : OBJECT;
 do
-    i := HERITAGE^tds.chercherGlobalement(identc^txt); 
+    i := HERITAGE^tds.chercherGlobalement(identc^txt);
+    if (i=nil) then
+        error(B_03,identc^txt);
+    else
+	    match i 
+        with INFONAMESPACE then
+            error(B_100);
+        else match i 
+            with INFOTYPE then    
+                it := i;     
+		        t := it.getType();
+			    match t
+			    with OBJECT then
+		             IDC^hinfo := it;
+		        else
+		            error(B_15, "object", t.getNom());
+		        end
+            end
+        end
+    end    
 end
 }
 
@@ -1655,33 +1679,165 @@ do
     i := IDC^info;
     match i 
     with INFOTYPE then
-        
-    HERITAGE^obj := IDC^info.;
+        HERITAGE^obj := IDC^info.getType();
+    else
+        error(B_100);
+    end
 end
 }
 
-DEFS -> #obj ;
-#obj {
+DEFS -> #code;
+#code{
 do
-    DEFS^obj := DEFS^hobj;
+    DEFS^code := DEFS^hcode;
+    DEFS^dep := DEFS^hdep;
+    
 end
 }
 
-DEFS ->  ACCES DEF DEFS ;
-DEF  ->  TYPE ident DECL ;
+DEFS ->  ACCES DEF #hdep DEFS #code;
+#hdep{
+do
+    DEFS1^hdep := DEF^dep;
+    DEFS1^hcode := DEF^code;
+end
+}
+#code{
+do
+    DEFS^code := DEFS1^code;
+    DEFS^dep := DEFS1^dep;
+end
+}
+
+
+DEF  ->  TYPE ident #decl DECL #code;
+#decl{
+do
+    DECL^nom := ident^txt;
+    DECL^htype := TYPE^type;
+end
+}
+
+#code {
+local
+i : INFO;
+iv : INFOVAR;
+do
+  if ~DECL^est_fonction then
+    iv := new INFOVAR(TYPE^type, new Emplacement(DEF^hdep,new Register("fictif",0)));
+    DEF^dep := DEF^hdep+TYPE^type.getTaille();
+    DEF^tds.inserer(ident^txt,iv);
+    DEF^code := "";
+  else
+    DEF^code := DEF^hcode + DECL^code;
+  end
+end
+}
+
+
 -- constructeur
 DEF  ->  identc paro PARFS parf BASE BLOC;
 -- appel eventuel au constructeur de la classe parente.
 BASE -> ;
 BASE -> dpts base paro ES parf  ;
 -- Mode de passage pour les fonctions et méthodes : rien : D, ref : D/R, out : R
-PARF ->  MODE TYPE ident ;
+--PARF ->  MODE TYPE ident ;
 --MODE -> ref ;
 --MODE -> out ; 
-F -> true;
-F -> false;
-F -> this FX;
-F -> base FX;
+F -> true #type;
+#type {
+do
+       F^type := new DTYPE("bool", 1);
+    -- il faut encore définir la bonne taille
+    F^code_est_adresse := false;
+    F^code := F^machine.genCst("1");
+    F^adresse := nil;
+    F^etoile:=false;
+end
+}
+F -> false #type;
+#type {
+do
+       F^type := new DTYPE("bool", 1);
+    -- il faut encore définir la bonne taille
+    F^code_est_adresse := false;
+    F^code := F^machine.genCst("0");
+    F^adresse := nil;
+    F^etoile:=false;
+end
+}
+F -> this #htype FX #type;
+#htype{
+local
+i :INFO;
+iv : INFOVAR;
+i_f : INFOFONC;
+t : DTYPE;
+e : Emplacement;
+eti : String; 
+do
+    i := F^tds.chercherGlobalement(ident^txt);
+    if i = nil then
+        error(B_03, ident^txt);
+    else
+        FX^hinfo := i;
+        --FX^htype := i.getType();
+        match i
+        with INFOVAR then
+            iv := i;
+            e := iv.getEmpl();
+            t := iv.getType();
+            FX^hadresse := e;
+            FX^htype := iv.getType();
+            match t
+            with STRUCT then
+                if ~F^gauche_affect then
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
+--                    FX^hcode := F^machine.genAdr(e.getDep(), e.getReg());
+                else
+                    FX^hcode := "";
+                end
+                FX^hcode_est_adresse := false;
+            else match t
+            with POINTEUR then
+                FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
+                FX^hcode_est_adresse := true;
+            else
+                if F^gauche_affect then
+                    FX^hcode := F^machine.genComment("gauche_affect");
+                else
+                    FX^hcode := F^machine.genReadMem(e.getDep(), t.getTaille(), e.getReg());
+                end
+                FX^hcode_est_adresse := false;
+            end
+            
+           end 
+            
+        else match i
+        with INFOFONC then
+            i_f := i;
+            FX^htype := i_f.getRtype();
+                FX^hcode := "";
+                FX^hcode_est_adresse := false;
+        else
+            
+            error(B_09,ident^txt);
+        end
+        end
+    end
+end
+}
+
+#type{
+do
+    F^type := FX^type;
+    F^code := FX^code;
+    F^code_est_adresse := FX^code_est_adresse;
+    F^adresse := FX^adresse;
+    F^etoile := false;
+end
+}
+--F -> base FX;
 F -> null2;
 F -> new identc IDC paro ES parf ;
 end
