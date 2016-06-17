@@ -300,7 +300,6 @@ local
 t : TDS;
 m : LinkedHashMap;
 do
-
     --penser à surcharge la méthode mmParas pour gérer les LinkedHashMap en paramètre
     if (FONCTION^infofon.mmParas(PARFS^para) /= -1) then
         error(B_02, FONCTION^nom);
@@ -340,8 +339,8 @@ nom_classe : String;
 do
     PARFS^para:= new LinkedHashMap();
     tc := PARFS^type_classe;
-    nom_classe := tc.getNomClasse();
     if (tc /= nil ) then
+        nom_classe := tc.getNomClasse();
         o := PARFS^hordre + tc.getTaille();
         iv := new INFOVAR(tc, new Emplacement(-o, new Register("LB", 0)));
         PARFS^para.put("this", iv);
@@ -360,13 +359,13 @@ o : INTEGER;
 tc : OBJECT;
 nom_classe : String;
 do
+    this := new LinkedHashMap();
     tc := PARFS^type_classe;
-    nom_classe := tc.getNomClasse();
     if (tc /= nil ) then
+        nom_classe := tc.getNomClasse();
 	    o := PARFS^hordre + tc.getTaille();
 	    i := new INFOVAR(tc,new Emplacement(-o, new Register("LB",0)));
 	    PARF^hordre := o;
-	    this := new LinkedHashMap();
 	    this.put("this",i);
 	    call PARFS^tds.inserer("this",i);
     end
@@ -838,7 +837,7 @@ end
 AX -> OPREL R #type;
 #type{
 do
- if ~(R^type.compareTo(AX^htype) ) then 
+ if ~(AX^htype.compareTo(R^type) ) then 
   error (B_09," 697" +" mauvais type");
  else
   AX^type:=new DTYPE("int", 1);
@@ -941,7 +940,7 @@ end
 RX ->   OPADD  T #htype RX #type ;
 #htype{
 do
-    if(~T^type.compareTo(RX^htype) || ~RX^htype.OpCompat(OPADD^op))
+    if(~RX^htype.compareTo(T^type) || ~RX^htype.OpCompat(OPADD^op))
         then error(B_07,T^type,RX^htype,"+");
     else
         RX1^htype := RX^htype; 
@@ -1033,7 +1032,7 @@ end
 
 #htype{
 do
-    if(~F^type.compareTo(TX^htype) || ~TX^htype.OpCompat(OPMUL^op))
+    if(~TX^htype.compareTo(F^type) || ~TX^htype.OpCompat(OPMUL^op))
         then error(B_07,F^type,TX^htype,"*");
     else
         TX1^htype := TX^htype; 
@@ -1626,7 +1625,7 @@ end
 #gen {
 do
   -- On recupere le code assembleur 'inline' dans : ASM^code_asm ;
-  ENTITE^code := ASM^code_asm;
+  ENTITE^code := ENTITE^hcode + ASM^code_asm;
   ENTITE^dep := ENTITE^hdep;
 end
 }
@@ -1695,7 +1694,7 @@ do
         error(B_17, identc^txt);
     end
     ENTITE^dep := ENTITE^hdep;
-    ENTITE^code := ENTITE^machine.genJump(DEFS^code);
+    ENTITE^code := ENTITE^hcode + ENTITE^machine.genJump(DEFS^code);
 end
 }
 
@@ -1779,13 +1778,14 @@ end
 DEFS ->  ACCES DEF #hcode DEFS #code;
 #hcode{
 do
+    DEFS1^hdep := DEF^dep;
     DEFS1^hcode := DEF^code;
 end
 }
 #code{
 do
     DEFS^code := DEFS1^code;
-    DEFS^dep := DEF^dep + DEFS1^dep;
+    DEFS^dep := DEFS1^dep;
 end
 }
 
@@ -1811,6 +1811,7 @@ do
     DEF^code := "";
   else
     DEF^code := DEF^hcode + DECL^code;
+    DEF^dep := DEF^hdep;
   end
 end
 }

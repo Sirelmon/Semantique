@@ -8,22 +8,25 @@ public class OBJECT extends DTYPE {
 	
 	protected TDS tds;
 	protected String nomClasse;
+	protected OBJECT heritage;
 	
 	public OBJECT(String nomClasse) {
 		super("object",0);
 		this.tds = new TDS();
 		this.nomClasse = nomClasse;
+		this.heritage = null;
 	}
 	
 	public OBJECT(String nomClasse, OBJECT heritage) {
 		super("object",heritage.getTaille());
 		this.tds = new TDS(heritage.tds);
 		this.nomClasse = nomClasse;
+		this.heritage = heritage;
 	}
 	
 	public boolean compareTo(DTYPE autre) {
 		if (autre instanceof OBJECT)
-			return (this.getNomClasse().equals(((OBJECT) autre).getNomClasse()));
+			return ((this.getNomClasse().equals(((OBJECT) autre).getNomClasse())) || (this.getNomClasse().equals(((OBJECT) autre).getHeritage().getNomClasse())));
 		return false;
 	}
 	
@@ -33,6 +36,10 @@ public class OBJECT extends DTYPE {
 	
 	public String getNomClasse() {
 		return nomClasse;
+	}
+	
+	public OBJECT getHeritage() {
+		return heritage;
 	}
 	
 	public void majTaille(DTYPE type) {

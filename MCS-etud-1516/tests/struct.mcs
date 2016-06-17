@@ -12,6 +12,11 @@ typedef struct {
 
 Chanson lucy;
 
+Beatle devientAuteur(Beatle b) {
+	b.auteur = 1;
+	return b;
+}
+
 void main() {
 	lucy.john.auteur = 1;
 	lucy.paul.auteur = lucy.john.auteur;
@@ -19,5 +24,6 @@ void main() {
 	lucy.paul.instrument = 'o';
 	lucy.george.instrument = lucy.john.instrument;
 	lucy.ringo.instrument = 'b';
+	lucy.george = devientAuteur(lucy.george);
 }
 	

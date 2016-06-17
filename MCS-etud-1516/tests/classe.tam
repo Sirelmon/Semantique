@@ -5,7 +5,8 @@ _PointX0:
 	LOAD(1) -3[LB]
 	STORE(1) -2[LB]
 	LOAD(1) -4[LB]
-	STORE(1) -2[LB]
+	STORE(1) -1[LB]
+	LOAD(2) -2[LB]
 	RETURN (2) 4
 _inverserX0:
 	PUSH 1
@@ -16,13 +17,13 @@ _inverserX0:
 	LOADI(1)
 	STORE(1) 3[LB]
 	LOADA -2[LB]
-	;Calcul deplacement struct 0
-	LOADL 0
+	;Calcul deplacement struct 1
+	LOADL 1
 	SUBR Iadd
 	LOADI(1)
 	STORE(1) -2[LB]
 	LOAD(1) 3[LB]
-	STORE(1) -2[LB]
+	STORE(1) -1[LB]
 	RETURN (0) 2
 _sommeX0:
 	LOADA -2[LB]
@@ -31,8 +32,8 @@ _sommeX0:
 	SUBR Iadd
 	LOADI(1)
 	LOADA -2[LB]
-	;Calcul deplacement struct 0
-	LOADL 0
+	;Calcul deplacement struct 1
+	LOADL 1
 	SUBR Iadd
 	LOADI(1)
 	SUBR IAdd
@@ -41,6 +42,13 @@ X0 :
 ; Appel a _mainX0
 	CALL(SB) _mainX0
 	HALT
+_fonctionX0:
+	LOAD(1) -3[LB]
+	STORE(1) -2[LB]
+	LOAD(1) -4[LB]
+	STORE(1) -1[LB]
+	LOAD(2) -2[LB]
+	RETURN (2) 4
 _mainX0:
 	PUSH 2
 	LOADL 2

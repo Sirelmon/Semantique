@@ -5,6 +5,7 @@ public class Point {
 	public Point(int a, int b){
 		this.x = a;
 		this.y = b;
+		return this;
 	}
 	
 	public void inverser() {
@@ -16,6 +17,17 @@ public class Point {
 	public int somme() {
 		return (this.x + this.y);
 	}
+}
+
+typedef struct {
+	int x;
+	int y;
+} Point2;
+
+Point2 fonction(Point2 p, int a, int b) {
+	p.x = a;
+	p.y = b;
+	return p;
 }
 
 void main() {

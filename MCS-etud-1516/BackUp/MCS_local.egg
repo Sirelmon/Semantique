@@ -1546,7 +1546,7 @@ end
 #gen {
 do
   -- On recupere le code assembleur 'inline' dans : ASM^code_asm ;
-  ENTITE^code := ASM^code_asm;
+  ENTITE^code := ENTITE^hcode + ASM^code_asm;
   ENTITE^dep := ENTITE^hdep;
 end
 }

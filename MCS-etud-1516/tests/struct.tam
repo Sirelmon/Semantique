@@ -6,6 +6,11 @@
 ; Appel a _mainX0
 	CALL(SB) _mainX0
 	HALT
+_devientAuteurX0:
+	LOADL 1
+	STORE(1) -1[LB]
+	LOAD(2) -2[LB]
+	RETURN (2) 2
 _mainX0:
 	LOADL 1
 	STORE(1) 1[SB]
@@ -27,4 +32,13 @@ _mainX0:
 	STORE(1) 6[SB]
 	LOADL 'b'
 	STORE(1) 4[SB]
+	LOADA 0[SB]
+	;Calcul deplacement struct 6
+	LOADL 6
+	SUBR Iadd
+	LOADI(2)
+; Appel a _devientAuteurX0
+	CALL(SB) _devientAuteurX0
+; appel de fonction
+	STORE(2) 6[SB]
 	RETURN (0) 0
