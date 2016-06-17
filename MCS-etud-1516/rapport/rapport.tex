@@ -67,10 +67,11 @@ Ainsi, un \textsc{object} contient une \textsc{tds}, qui est initialisée par:
 \item Une \textsc{tds} fille de la \textsc{tds} de la classe mère, si la classe considérée est héritée.
 \end{itemize}
 
-La taille de notre classe est définie par la taille de tous ses attributs (comme dans le cas d'un \textsc{struct}). Ainsi, on définit la taille à la fin de la définition d'une classe, avec une recherche de chaque attribut dans la \textsc{tds} de la classe.
+La taille de notre classe est définie par la taille de tous ses attributs (comme dans le cas d'un \textsc{struct}). Ainsi, on définit la taille à la fin de la définition d'une classe, avec une recherche de chaque attribut dans la \textsc{tds} de la classe. \\\\
+Un \textsc{object} possède également son héritage (de type \textsc{object}) qui sera null si une classe ne possède pas d'héritage.
 
 
-%%Hiérarchie à définir à la fin 
+\includegraphics[scale=0.25]{microCsharp.jpg}
 
 
 
@@ -152,9 +153,33 @@ Nous avons défini plusieurs préconditions dans le cadre de la compilation du $
 
 Nous avons longuement réfléchi à l'implémentation du $\mu C \#$, et nous avons mis en place une stratégie pour gérer l'aspect \textsc{tds} lié à ce langage, mais nous avons éprouvé quelques difficultés à établir une stratégie fonctionnelle.\\
 Par conséquent, le compilateur implémenté n'est pas opérationnel avec un programme écrit en $\mu C \#$.\\
-Ces difficultés sont liées à la différence notable entre le langage impératif $\mu C$ et le langage objet $\mu C \#$, car beaucoup de chose étant théoriquement impossibles en objet (par exemple, déclarer une variable globale dans une classe) sont possibles en impératif.\\
- Cela implique de devoir changer le traitement de certaines règles de productions définies lors de la définition du $\mu C$.
+Le fichier egg ne contient pas d'erreurs, et le compilateur fonctionne sur un programme classique, mais le code TAM généré n'est pas correcte.
 
+De plus, nous avons fixé les préconditions suivantes: 
+\begin{itemize}
+\item Le constructeur doit retourner l'objet courant (\textbf{this}) pour obtenir l'objet créé.
+\item Lors de l'appel d'une méthode sur un objet, celui sur lequel on veut l'appliquer doit être le premier paramètre de la fonction (mais pas lors de la déclaration de cette fonction).
+\end{itemize}
+
+
+
+
+Ces difficultés sont liées à la différence notable entre le langage impératif $\mu C$ et le langage objet $\mu C \#$, car beaucoup de chose étant théoriquement impossibles en objet (par exemple, déclarer une variable globale dans une classe) sont possibles en impératif.\\
+ Cela implique de devoir changer le traitement de certaines règles de productions définies lors de la définition du $\mu C$. \\
+Si nous avions disposé de plus de temps, nous aurions instancié une classe comme un \textsc{pointeur} sur un \textsc{struct}, et non comme un \textsc{struct} (stratégie actuelle). Cela permettrait de pouvoir modifier un objet en le mettant simplement en paramètre.
+
+\section{Fichiers fournis}
+
+Notre projet contient les deux fichiers \textsl{.egg} suivants: 
+\begin{itemize}
+\item Le fichier $MCS\_local.egg$ dans le dossier $BackUp$ est propre au $\mu C$.
+\item Le fichier $MCS.egg$ dans le dossier $src.mcs$ est le fichier contentant les ajouts faits pour le $\mu C \#$.
+\end{itemize}
+
+\textbf{Remarque:} En théorie, le fichier $MCS.egg$ peut être utilisé pour les codes de tests en $\mu C$ (dans le dossier $tests$), mais dans le doute, nous vous avons fourni le fichier $MCS\_local.egg$ dans le cas où l'une de nos modifications aurait pu entraîner des erreurs de compilation au niveau du $\mu C$.
+
+
+\newpage
 \section*{Conclusion}
 
 

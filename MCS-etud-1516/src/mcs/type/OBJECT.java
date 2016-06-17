@@ -25,9 +25,15 @@ public class OBJECT extends DTYPE {
 	}
 	
 	public boolean compareTo(DTYPE autre) {
-		if (autre instanceof OBJECT)
-			return ((this.getNomClasse().equals(((OBJECT) autre).getNomClasse())) || (this.getNomClasse().equals(((OBJECT) autre).getHeritage().getNomClasse())));
-		return false;
+		if (autre instanceof OBJECT) {
+			if (heritage != null) {
+				return ((this.getNomClasse().equals(((OBJECT) autre).getNomClasse())) || (heritage.compareTo((OBJECT) autre )));
+			} else {
+				return this.getNomClasse().equals(((OBJECT) autre).getNomClasse());
+			}
+		} else {
+			return false;
+		}
 	}
 	
 	public TDS getTds() {
